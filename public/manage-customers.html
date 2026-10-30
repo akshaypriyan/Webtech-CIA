@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Customers - MarketHub Admin</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div id="navbar"></div>
+
+  <main class="py-12">
+    <div class="container">
+      
+      <!-- Page Header -->
+      <div class="admin-page-header">
+        <div class="admin-title-area">
+          <h1>👥 Customer Account Management</h1>
+          <p class="admin-subtitle">Inspect registered shoppers, review order histories, and manage account statuses.</p>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="admin-toolbar">
+        <div class="toolbar-filters">
+          <div class="search-input-box">
+            <input type="text" id="customer-search-input" class="form-input" placeholder="Search by name, email, or mobile...">
+          </div>
+          <select id="customer-status-filter" class="form-select" style="max-width: 180px;">
+            <option value="ALL">All Statuses</option>
+            <option value="Active">Active Accounts</option>
+            <option value="Blocked">Blocked Accounts</option>
+          </select>
+        </div>
+        <div class="text-sm text-muted">
+          Showing <span id="customer-count" class="font-bold">4</span> customers
+        </div>
+      </div>
+
+      <!-- Customers Table -->
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width: 80px;">ID</th>
+              <th>Customer</th>
+              <th>Contact Details</th>
+              <th>Orders</th>
+              <th>Status</th>
+              <th style="text-align: right; width: 180px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="customers-table-body">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="toast-container"></div>
+  <script src="js/api.js"></script>
+  <script src="js/navbar.js"></script>
+  <script>
+    requireRole('Admin', 'Super Admin');
+
+    let customers = [
+      { user_id: 101, name: 'Alex Johnson', email: 'customer@market.com', mobile: '9876543210', orders: 8, status: 'Active', joined: '2026-10-15' },
+      { user_id: 102, name: 'Priya Sharma', email: 'priya.s@example.com', mobile: '9876501234', orders: 3, status: 'Active', joined: '2026-10-18' },
+      { user_id: 103, name: 'Rahul Verma', email: 'rahul.v@example.com', mobile: '9812345678', orders: 0, status: 'Active', joined: '2026-10-22' },
+      { user_id: 104, name: 'Marcus Sterling', email: 'marcus.s@example.com', mobile: '9899887766', orders: 1, status: 'Blocked', joined: '2026-10-05' }
+    ];
+
+    const tbody = document.getElementById('customers-table-body');
+    const searchInput = document.getElementById('customer-search-input');
+    const statusFilter = document.getElementById('customer-status-filter');
+
+    function renderCustomers() {
+      const q = searchInput.value.toLowerCase().trim();
+      const status = statusFilter.value;
+
+      const filtered = customers.filter(c => {
+        const matchesQuery = c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || c.mobile.includes(q);
+        const matchesStatus = status === 'ALL' || c.status === status;
+        return matchesQuery && matchesStatus;
+      });
+
+      document.getElementById('customer-count').textContent = filtered.length;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-muted">No customers found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(c => `
+        <tr>
+          <td><span class="font-mono text-muted text-sm">#${c.user_id}</span></td>
+          <td>
+            <div class="font-bold">${escapeHtml(c.name)}</div>
+            <div class="text-muted text-sm">Joined ${c.joined}</div>
+          </td>
+          <td>
+            <div>${escapeHtml(c.email)}</div>
+            <div class="text-muted text-sm">${escapeHtml(c.mobile)}</div>
+          </td>
+          <td><span class="badge badge-secondary">${c.orders} placed</span></td>
+          <td>
+            <span class="badge ${c.status === 'Active' ? 'badge-success' : 'badge-danger'}">
+              ${c.status}
+            </span>
+          </td>
+          <td style="text-align: right;">
+            <div class="action-btn-group">
+              ${c.status === 'Active' 
+                ? `<button class="btn btn-outline btn-sm text-danger" onclick="toggleStatus(${c.user_id}, 'Blocked')">Block</button>`
+                : `<button class="btn btn-primary btn-sm" onclick="toggleStatus(${c.user_id}, 'Active')">Unblock</button>`
+              }
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    window.toggleStatus = function(id, newStatus) {
+      const customer = customers.find(c => c.user_id === id);
+      if (!customer) return;
+      customer.status = newStatus;
+      showToast(`Customer account #${id} marked as ${newStatus}`, newStatus === 'Active' ? 'success' : 'warning');
+      renderCustomers();
+    };
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    searchInput.addEventListener('input', renderCustomers);
+    statusFilter.addEventListener('change', renderCustomers);
+    renderCustomers();
+  </script>
+</body>
+</html>

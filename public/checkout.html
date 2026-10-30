@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Secure Checkout - MarketHub Online Marketplace">
+  <title>Checkout - MarketHub</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .checkout-grid {
+      display: grid;
+      grid-template-columns: 1.6fr 1.2fr;
+      gap: var(--space-8);
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .checkout-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .checkout-step {
+      margin-bottom: var(--space-6);
+    }
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
+    }
+    .step-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-full);
+      background: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+    .address-card {
+      border: 1.5px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: var(--space-4);
+      margin-bottom: var(--space-3);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: flex;
+      gap: var(--space-3);
+      align-items: flex-start;
+      background: var(--bg-surface);
+    }
+    .address-card:hover {
+      border-color: var(--neutral-400);
+      background: var(--neutral-50);
+    }
+    .address-card.selected {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      box-shadow: 0 0 0 2px var(--primary);
+    }
+    .address-radio {
+      margin-top: 3px;
+    }
+    .order-mini-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3);
+      padding: var(--space-3) 0;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 0.92rem;
+    }
+    .order-mini-item:last-child {
+      border-bottom: none;
+    }
+    .payment-option {
+      border: 1.5px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: var(--space-4);
+      background: var(--bg-surface);
+      display: flex;
+      gap: var(--space-3);
+      align-items: center;
+    }
+    .payment-option.selected {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Dynamic Shared Navbar -->
+  <div id="navbar"></div>
+
+  <main class="py-8">
+    <div class="container">
+
+      <!-- Breadcrumbs & Header -->
+      <div class="mb-6">
+        <p class="text-muted" style="font-size: 0.88rem; margin-bottom: 4px;">
+          <a href="index.html">Home</a> &rsaquo; <a href="cart.html">Cart</a> &rsaquo; <span>Checkout</span>
+        </p>
+        <div class="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1>Order Checkout</h1>
+            <p>Select your delivery address and confirm your purchase</p>
+          </div>
+          <span class="badge badge-primary">Step 2: Customer Purchase Flow</span>
+        </div>
+      </div>
+
+      <!-- Checkout Content Grid -->
+      <form id="checkout-form" onsubmit="handlePlaceOrder(event)">
+        <div class="checkout-grid">
+
+          <!-- Left Column: Shipping & Payment Details -->
+          <div>
+            <!-- Step 1: Shipping Address Selection -->
+            <div class="card checkout-step">
+              <div class="card-header">
+                <div class="step-header" style="margin-bottom: 0;">
+                  <div class="step-badge">1</div>
+                  <h3 style="font-size: 1.15rem; margin-bottom: 0;">Select Shipping Address</h3>
+                </div>
+              </div>
+              <div class="card-body">
+                <div id="addresses-container">
+                  <!-- Mock Addresses modeled on 'addresses' table schema -->
+                  <label class="address-card selected" onclick="selectAddress(1)">
+                    <input type="radio" name="shipping_address_id" value="1" class="address-radio" checked>
+                    <div style="flex: 1;">
+                      <div class="flex items-center justify-between">
+                        <strong style="color: var(--neutral-900);">Campus Hostel / Primary Residence</strong>
+                        <span class="badge badge-success">Default</span>
+                      </div>
+                      <p style="margin-top: 4px; margin-bottom: 2px; font-size: 0.92rem;">
+                        Flat 402, Royal Residency, 12th Main Road
+                      </p>
+                      <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 0;">
+                        Bengaluru, Karnataka &bull; PIN: 560029
+                      </p>
+                    </div>
+                  </label>
+
+                  <label class="address-card" onclick="selectAddress(2)">
+                    <input type="radio" name="shipping_address_id" value="2" class="address-radio">
+                    <div style="flex: 1;">
+                      <strong style="color: var(--neutral-900);">Home / Family Address</strong>
+                      <p style="margin-top: 4px; margin-bottom: 2px; font-size: 0.92rem;">
+                        #88 Green Meadows, Sector 4
+                      </p>
+                      <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 0;">
+                        Mumbai, Maharashtra &bull; PIN: 400001
+                      </p>
+                    </div>
+                  </label>
+                </div>
+
+                <!-- Add New Address Toggle -->
+                <div class="mt-4">
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="toggleNewAddressForm()">
+                    + Add New Address
+                  </button>
+                </div>
+
+                <!-- New Address Form (Hidden by default) -->
+                <div id="new-address-form" style="display: none; margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px dashed var(--border-subtle);">
+                  <h4 style="font-size: 1rem; margin-bottom: var(--space-3);">Add New Shipping Address</h4>
+                  <div class="form-group">
+                    <label class="form-label">Address Line <span class="required">*</span></label>
+                    <input type="text" id="new-address-line" class="form-input" placeholder="House/Flat No., Street, Landmark">
+                  </div>
+                  <div class="grid grid-cols-3 gap-3">
+                    <div class="form-group">
+                      <label class="form-label">City <span class="required">*</span></label>
+                      <input type="text" id="new-city" class="form-input" placeholder="e.g. Bengaluru">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">State <span class="required">*</span></label>
+                      <input type="text" id="new-state" class="form-input" placeholder="e.g. Karnataka">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Pincode <span class="required">*</span></label>
+                      <input type="text" id="new-pincode" class="form-input" placeholder="e.g. 560029">
+                    </div>
+                  </div>
+                  <button type="button" class="btn btn-primary btn-sm" onclick="saveNewAddress()">
+                    Save & Use This Address
+                  </button>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Step 2: Payment Simulation -->
+            <div class="card checkout-step">
+              <div class="card-header">
+                <div class="step-header" style="margin-bottom: 0;">
+                  <div class="step-badge">2</div>
+                  <h3 style="font-size: 1.15rem; margin-bottom: 0;">Payment Method</h3>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="payment-option selected">
+                  <input type="radio" name="payment_method" value="simulated_cod" checked>
+                  <div>
+                    <strong style="color: var(--neutral-900);">Direct Order Placement (Simulated Gateway)</strong>
+                    <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 0; margin-top: 2px;">
+                      Compliant with academic project specifications: simulates instant transactional payment without external gateway dependencies.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Order Review & Placement -->
+          <div>
+            <div class="card">
+              <div class="card-header">
+                <h3 style="font-size: 1.1rem; margin-bottom: 0;">Order Review</h3>
+              </div>
+              <div class="card-body">
+                <div id="checkout-items-list">
+                  <div class="order-mini-item">
+                    <div>
+                      <div class="font-semibold" style="color: var(--neutral-900);">Pro Wireless Noise-Cancelling Headphones</div>
+                      <div class="text-muted" style="font-size: 0.82rem;">Qty: 1 &bull; $149.99 each</div>
+                    </div>
+                    <div class="font-semibold">$149.99</div>
+                  </div>
+                  <div class="order-mini-item">
+                    <div>
+                      <div class="font-semibold" style="color: var(--neutral-900);">Custom Mechanical RGB Gaming Keyboard</div>
+                      <div class="text-muted" style="font-size: 0.82rem;">Qty: 1 &bull; $89.50 each</div>
+                    </div>
+                    <div class="font-semibold">$89.50</div>
+                  </div>
+                </div>
+
+                <div class="mt-4 pt-4" style="border-top: 1px solid var(--border-subtle);">
+                  <div class="summary-line">
+                    <span>Items Subtotal</span>
+                    <span class="font-semibold">$239.49</span>
+                  </div>
+                  <div class="summary-line">
+                    <span>Shipping Fee</span>
+                    <span style="color: var(--success);" class="font-semibold">FREE</span>
+                  </div>
+                  <div class="summary-line">
+                    <span>Estimated Tax (5%)</span>
+                    <span class="font-semibold">$11.97</span>
+                  </div>
+                  <div class="summary-total">
+                    <span>Total Amount</span>
+                    <span style="color: var(--primary); font-size: 1.35rem;">$251.46</span>
+                  </div>
+                </div>
+
+                <div class="mt-6 flex flex-col gap-3">
+                  <button type="submit" id="place-order-btn" class="btn btn-primary btn-block btn-lg">
+                    Confirm & Place Order
+                  </button>
+                  <a href="cart.html" class="btn btn-secondary btn-block">
+                    &larr; Back to Shopping Cart
+                  </a>
+                </div>
+
+                <div class="mt-4" style="font-size: 0.8rem; color: var(--neutral-500); text-align: center;">
+                  By placing this order, stock is automatically decremented inside an atomic MySQL transaction.
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </form>
+
+    </div>
+  </main>
+
+  <div id="toast-container"></div>
+  <script src="js/api.js"></script>
+  <script src="js/navbar.js"></script>
+
+  <script>
+    // Route guard for customer role
+    const currentUser = typeof requireRole === 'function' ? requireRole('Customer') : null;
+
+    function selectAddress(addressId) {
+      document.querySelectorAll('.address-card').forEach(card => card.classList.remove('selected'));
+      const radio = document.querySelector(`input[name="shipping_address_id"][value="${addressId}"]`);
+      if (radio) {
+        radio.checked = true;
+        const parentCard = radio.closest('.address-card');
+        if (parentCard) parentCard.classList.add('selected');
+      }
+    }
+
+    function toggleNewAddressForm() {
+      const form = document.getElementById('new-address-form');
+      form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function saveNewAddress() {
+      const line = document.getElementById('new-address-line').value.trim();
+      const city = document.getElementById('new-city').value.trim();
+      const state = document.getElementById('new-state').value.trim();
+      const pincode = document.getElementById('new-pincode').value.trim();
+
+      if (!line || !city || !state || !pincode) {
+        showToast('Please fill in all address fields.', 'warning');
+        return;
+      }
+
+      const container = document.getElementById('addresses-container');
+      const newId = Date.now();
+      const newAddressHtml = `
+        <label class="address-card selected" onclick="selectAddress(${newId})">
+          <input type="radio" name="shipping_address_id" value="${newId}" class="address-radio" checked>
+          <div style="flex: 1;">
+            <div class="flex items-center justify-between">
+              <strong style="color: var(--neutral-900);">Newly Added Address</strong>
+              <span class="badge badge-primary">New</span>
+            </div>
+            <p style="margin-top: 4px; margin-bottom: 2px; font-size: 0.92rem;">${escapeHtml(line)}</p>
+            <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 0;">
+              ${escapeHtml(city)}, ${escapeHtml(state)} &bull; PIN: ${escapeHtml(pincode)}
+            </p>
+          </div>
+        </label>
+      `;
+
+      // Deselect existing
+      document.querySelectorAll('.address-card').forEach(c => c.classList.remove('selected'));
+      container.insertAdjacentHTML('afterbegin', newAddressHtml);
+      selectAddress(newId);
+
+      // Reset form
+      document.getElementById('new-address-line').value = '';
+      document.getElementById('new-city').value = '';
+      document.getElementById('new-state').value = '';
+      document.getElementById('new-pincode').value = '';
+      toggleNewAddressForm();
+
+      showToast('Address added successfully!', 'success');
+    }
+
+    function handlePlaceOrder(e) {
+      e.preventDefault();
+      const btn = document.getElementById('place-order-btn');
+      btn.disabled = true;
+      btn.textContent = 'Processing Transaction...';
+
+      showToast('Simulating order creation & transactional validation...', 'info');
+
+      setTimeout(() => {
+        showToast('Order #ORD-1003 successfully placed!', 'success', 2500);
+        setTimeout(() => {
+          window.location.href = 'my-orders.html?orderPlaced=true';
+        }, 1200);
+      }, 1000);
+    }
+
+    function escapeHtml(str) {
+      return (str || '').replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+      }[m]));
+    }
+  </script>
+</body>
+</html>

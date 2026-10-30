@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="View and manage items in your shopping cart on MarketHub.">
+  <title>Shopping Cart - MarketHub</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .cart-layout {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: var(--space-8);
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .cart-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+    .cart-item-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-4) 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .cart-item-row:last-child {
+      border-bottom: none;
+    }
+    .cart-item-img {
+      width: 72px;
+      height: 72px;
+      object-fit: cover;
+      border-radius: var(--radius-sm);
+      background-color: var(--neutral-100);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      border: 1px solid var(--border-subtle);
+      flex-shrink: 0;
+    }
+    .cart-item-details {
+      flex: 1;
+      min-width: 0;
+    }
+    .cart-item-title {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--neutral-900);
+      margin-bottom: 2px;
+    }
+    .cart-item-meta {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .qty-control {
+      display: inline-flex;
+      align-items: center;
+      border: 1.5px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background: var(--bg-surface);
+    }
+    .qty-btn {
+      background: none;
+      border: none;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.1rem;
+      color: var(--neutral-700);
+      transition: background var(--transition-fast);
+    }
+    .qty-btn:hover {
+      background: var(--neutral-100);
+      color: var(--primary);
+    }
+    .qty-input {
+      width: 44px;
+      height: 32px;
+      border: none;
+      text-align: center;
+      font-size: 0.95rem;
+      font-weight: 600;
+      background: transparent;
+      outline: none;
+    }
+    .cart-item-price {
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--neutral-900);
+      min-width: 80px;
+      text-align: right;
+    }
+    .remove-btn {
+      background: none;
+      border: none;
+      color: var(--neutral-400);
+      cursor: pointer;
+      padding: var(--space-2);
+      border-radius: var(--radius-xs);
+      transition: color var(--transition-fast);
+    }
+    .remove-btn:hover {
+      color: var(--danger);
+    }
+    .summary-line {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: var(--space-3);
+      font-size: 0.95rem;
+      color: var(--neutral-600);
+    }
+    .summary-total {
+      display: flex;
+      justify-content: space-between;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--neutral-900);
+      padding-top: var(--space-4);
+      margin-top: var(--space-4);
+      border-top: 1px solid var(--border-subtle);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Shared Dynamic Navbar -->
+  <div id="navbar"></div>
+
+  <main class="py-8">
+    <div class="container">
+
+      <!-- Breadcrumb & Header -->
+      <div class="mb-6">
+        <p class="text-muted" style="font-size: 0.88rem; margin-bottom: 4px;">
+          <a href="index.html">Home</a> &rsaquo; <span>Shopping Cart</span>
+        </p>
+        <div class="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1>Shopping Cart</h1>
+            <p id="cart-item-count-text">Review your selected items before proceeding to checkout</p>
+          </div>
+          <button id="clear-cart-btn" class="btn btn-secondary btn-sm" onclick="clearCart()">
+            🗑️ Clear Cart
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Cart Layout -->
+      <div class="cart-layout" id="cart-content">
+        <!-- Cart Items List Card -->
+        <div class="card">
+          <div class="card-header flex justify-between items-center">
+            <h3 style="font-size: 1.1rem; margin-bottom: 0;">Cart Items (<span id="cart-items-qty">2</span>)</h3>
+            <span class="badge badge-primary">Customer Order Flow (P2)</span>
+          </div>
+          <div class="card-body" id="cart-items-container">
+            <!-- Dynamic items rendered via JavaScript -->
+          </div>
+        </div>
+
+        <!-- Order Summary Sidebar -->
+        <div class="card">
+          <div class="card-header">
+            <h3 style="font-size: 1.1rem; margin-bottom: 0;">Order Summary</h3>
+          </div>
+          <div class="card-body">
+            <div class="summary-line">
+              <span>Items Subtotal</span>
+              <span id="summary-subtotal" class="font-semibold">$239.49</span>
+            </div>
+            <div class="summary-line">
+              <span>Estimated Shipping</span>
+              <span class="text-success font-semibold" style="color: var(--success);">FREE</span>
+            </div>
+            <div class="summary-line">
+              <span>Estimated Tax (5%)</span>
+              <span id="summary-tax" class="font-semibold">$11.97</span>
+            </div>
+            <div class="summary-total">
+              <span>Total</span>
+              <span id="summary-total" style="color: var(--primary);">$251.46</span>
+            </div>
+
+            <div class="mt-6 flex flex-col gap-3">
+              <a href="checkout.html" class="btn btn-primary btn-block btn-lg" id="checkout-cta-btn">
+                Proceed to Checkout &rarr;
+              </a>
+              <a href="products.html" class="btn btn-secondary btn-block">
+                Continue Shopping
+              </a>
+            </div>
+
+            <div class="mt-6 p-4" style="background: var(--neutral-50); border-radius: var(--radius-sm); border: 1px dashed var(--border-subtle); font-size: 0.82rem; color: var(--neutral-600);">
+              🔒 <strong>Safe & Secure Checkout</strong><br>
+              Real-time stock validation and transactional integrity protected by Node.js & MySQL.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty Cart State (Hidden by default) -->
+      <div id="empty-cart-state" class="card text-center py-12" style="display: none;">
+        <div class="card-body py-12">
+          <div style="font-size: 3.5rem; margin-bottom: 1rem;">🛒</div>
+          <h2>Your Shopping Cart is Empty</h2>
+          <p class="text-muted" style="max-width: 460px; margin: 0 auto 1.5rem;">
+            Looks like you haven't added anything to your cart yet. Explore our featured categories and top seller products!
+          </p>
+          <a href="products.html" class="btn btn-primary btn-lg">Browse Products</a>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Global Toast & Scripts -->
+  <div id="toast-container"></div>
+  <script src="js/api.js"></script>
+  <script src="js/navbar.js"></script>
+
+  <script>
+    /**
+     * Day 1: Interactive Static Prototype with Mock Cart Data
+     * (Connected to live MySQL API in Day 2)
+     */
+
+    // Sample mock cart data modeled after database schema (products & cart_items)
+    let cartItems = [
+      {
+        cart_item_id: 1,
+        product_id: 1,
+        product_name: "Pro Wireless Noise-Cancelling Headphones",
+        seller_name: "AudioTech Official",
+        price: 149.99,
+        quantity: 1,
+        stock_quantity: 15,
+        image_emoji: "🎧"
+      },
+      {
+        cart_item_id: 2,
+        product_id: 2,
+        product_name: "Custom Mechanical RGB Gaming Keyboard",
+        seller_name: "KeyPro Studios",
+        price: 89.50,
+        quantity: 1,
+        stock_quantity: 8,
+        image_emoji: "⌨️"
+      }
+    ];
+
+    function renderCart() {
+      const container = document.getElementById('cart-items-container');
+      const cartContent = document.getElementById('cart-content');
+      const emptyState = document.getElementById('empty-cart-state');
+      const itemCountSpan = document.getElementById('cart-items-qty');
+      const clearBtn = document.getElementById('clear-cart-btn');
+
+      if (!cartItems || cartItems.length === 0) {
+        cartContent.style.display = 'none';
+        emptyState.style.display = 'block';
+        if (clearBtn) clearBtn.style.display = 'none';
+        return;
+      }
+
+      cartContent.style.display = 'grid';
+      emptyState.style.display = 'none';
+      if (clearBtn) clearBtn.style.display = 'inline-flex';
+
+      let totalQty = 0;
+      let subtotal = 0;
+
+      container.innerHTML = cartItems.map(item => {
+        totalQty += item.quantity;
+        const lineTotal = item.price * item.quantity;
+        subtotal += lineTotal;
+
+        return `
+          <div class="cart-item-row" id="item-row-${item.cart_item_id}">
+            <div class="cart-item-img">
+              ${item.image_emoji}
+            </div>
+            <div class="cart-item-details">
+              <div class="cart-item-title">${escapeHtml(item.product_name)}</div>
+              <div class="cart-item-meta">Sold by: <span class="font-semibold">${escapeHtml(item.seller_name)}</span> &bull; In Stock: ${item.stock_quantity}</div>
+              <div class="text-muted" style="font-size: 0.88rem; margin-top: 4px;">
+                Unit Price: $${Number(item.price).toFixed(2)}
+              </div>
+            </div>
+            <div class="qty-control">
+              <button class="qty-btn" onclick="updateQty(${item.cart_item_id}, -1)" aria-label="Decrease quantity">&minus;</button>
+              <input type="text" class="qty-input" value="${item.quantity}" readonly aria-label="Quantity">
+              <button class="qty-btn" onclick="updateQty(${item.cart_item_id}, 1)" aria-label="Increase quantity">&plus;</button>
+            </div>
+            <div class="cart-item-price">
+              $${lineTotal.toFixed(2)}
+            </div>
+            <button class="remove-btn" onclick="removeItem(${item.cart_item_id})" title="Remove item" aria-label="Remove item">
+              ✕
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      itemCountSpan.textContent = totalQty;
+      const tax = subtotal * 0.05;
+      const total = subtotal + tax;
+
+      document.getElementById('summary-subtotal').textContent = `$${subtotal.toFixed(2)}`;
+      document.getElementById('summary-tax').textContent = `$${tax.toFixed(2)}`;
+      document.getElementById('summary-total').textContent = `$${total.toFixed(2)}`;
+    }
+
+    function updateQty(cartItemId, delta) {
+      const item = cartItems.find(i => i.cart_item_id === cartItemId);
+      if (!item) return;
+
+      const newQty = item.quantity + delta;
+      if (newQty < 1) {
+        removeItem(cartItemId);
+        return;
+      }
+      if (newQty > item.stock_quantity) {
+        showToast(`Cannot add more. Only ${item.stock_quantity} units available in stock.`, 'warning');
+        return;
+      }
+
+      item.quantity = newQty;
+      renderCart();
+      showToast(`Updated "${item.product_name}" quantity to ${newQty}.`, 'info', 1500);
+    }
+
+    function removeItem(cartItemId) {
+      const item = cartItems.find(i => i.cart_item_id === cartItemId);
+      cartItems = cartItems.filter(i => i.cart_item_id !== cartItemId);
+      renderCart();
+      if (item) {
+        showToast(`Removed "${item.product_name}" from cart.`, 'info');
+      }
+    }
+
+    function clearCart() {
+      if (confirm('Are you sure you want to clear all items in your cart?')) {
+        cartItems = [];
+        renderCart();
+        showToast('Your shopping cart has been cleared.', 'info');
+      }
+    }
+
+    function escapeHtml(str) {
+      return (str || '').replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+      }[m]));
+    }
+
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', () => {
+      renderCart();
+    });
+  </script>
+</body>
+</html>

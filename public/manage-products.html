@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Moderation - MarketHub Admin</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div id="navbar"></div>
+
+  <main class="py-12">
+    <div class="container">
+      
+      <!-- Page Header -->
+      <div class="admin-page-header">
+        <div class="admin-title-area">
+          <h1>📦 Product Moderation & Compliance</h1>
+          <p class="admin-subtitle">Audit seller inventory listings, review reported items, and ensure marketplace quality.</p>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="admin-toolbar">
+        <div class="toolbar-filters">
+          <div class="search-input-box">
+            <input type="text" id="product-search-input" class="form-input" placeholder="Search by product name, seller, or ID...">
+          </div>
+          <select id="product-category-filter" class="form-select" style="max-width: 180px;">
+            <option value="ALL">All Categories</option>
+            <option value="Electronics">Electronics</option>
+            <option value="Fashion">Fashion</option>
+            <option value="Home & Kitchen">Home & Kitchen</option>
+            <option value="Books">Books</option>
+            <option value="Beauty">Beauty</option>
+            <option value="Sports">Sports</option>
+          </select>
+          <select id="product-status-filter" class="form-select" style="max-width: 160px;">
+            <option value="ALL">All Statuses</option>
+            <option value="Active">Active</option>
+            <option value="Flagged">Flagged</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+        </div>
+        <div class="text-sm text-muted">
+          Showing <span id="product-count" class="font-bold">5</span> listings
+        </div>
+      </div>
+
+      <!-- Products Table -->
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width: 80px;">ID</th>
+              <th>Product Details</th>
+              <th>Category</th>
+              <th>Seller</th>
+              <th>Price & Stock</th>
+              <th>Status</th>
+              <th style="text-align: right; width: 180px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="products-table-body">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="toast-container"></div>
+  <script src="js/api.js"></script>
+  <script src="js/navbar.js"></script>
+  <script>
+    requireRole('Admin', 'Super Admin');
+
+    let products = [
+      { product_id: 101, name: 'Wireless Noise-Cancelling Headphones', category: 'Electronics', seller: 'Nova Tech Retailers', price: 149.99, stock: 45, status: 'Active' },
+      { product_id: 102, name: 'Organic Cotton Crewneck T-Shirt', category: 'Fashion', seller: 'Urban Threads Studio', price: 29.50, stock: 120, status: 'Active' },
+      { product_id: 103, name: 'Precision Ergonomic Gaming Mouse', category: 'Electronics', seller: 'Nova Tech Retailers', price: 59.00, stock: 32, status: 'Active' },
+      { product_id: 104, name: 'Designer Replicas Luxury Handbag', category: 'Fashion', seller: 'Urban Threads Studio', price: 399.00, stock: 2, status: 'Flagged' },
+      { product_id: 105, name: 'Stainless Steel Insulated Water Bottle', category: 'Sports', seller: 'Apex Gear Direct', price: 24.99, stock: 0, status: 'Inactive' }
+    ];
+
+    const tbody = document.getElementById('products-table-body');
+    const searchInput = document.getElementById('product-search-input');
+    const categoryFilter = document.getElementById('product-category-filter');
+    const statusFilter = document.getElementById('product-status-filter');
+
+    function renderProducts() {
+      const q = searchInput.value.toLowerCase().trim();
+      const cat = categoryFilter.value;
+      const status = statusFilter.value;
+
+      const filtered = products.filter(p => {
+        const matchesQuery = p.name.toLowerCase().includes(q) || p.seller.toLowerCase().includes(q) || String(p.product_id).includes(q);
+        const matchesCategory = cat === 'ALL' || p.category === cat;
+        const matchesStatus = status === 'ALL' || p.status === status;
+        return matchesQuery && matchesCategory && matchesStatus;
+      });
+
+      document.getElementById('product-count').textContent = filtered.length;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-muted">No products found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(p => `
+        <tr>
+          <td><span class="font-mono text-muted text-sm">#${p.product_id}</span></td>
+          <td>
+            <div class="font-bold">${escapeHtml(p.name)}</div>
+          </td>
+          <td><span class="badge badge-secondary">${escapeHtml(p.category)}</span></td>
+          <td><span class="text-muted text-sm">${escapeHtml(p.seller)}</span></td>
+          <td>
+            <div class="font-bold">$${p.price.toFixed(2)}</div>
+            <div class="text-xs text-muted">${p.stock} units</div>
+          </td>
+          <td>
+            <span class="badge ${p.status === 'Active' ? 'badge-success' : (p.status === 'Flagged' ? 'badge-warning' : 'badge-danger')}">
+              ${p.status}
+            </span>
+          </td>
+          <td style="text-align: right;">
+            <div class="action-btn-group">
+              ${p.status === 'Flagged'
+                ? `<button class="btn btn-primary btn-sm" onclick="setProductStatus(${p.product_id}, 'Active')">Approve</button>`
+                : `<button class="btn btn-outline btn-sm text-danger" onclick="setProductStatus(${p.product_id}, 'Flagged')">Flag</button>`
+              }
+              <button class="btn btn-secondary btn-sm" onclick="setProductStatus(${p.product_id}, 'Inactive')">Takedown</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    window.setProductStatus = function(id, newStatus) {
+      const p = products.find(prod => prod.product_id === id);
+      if (!p) return;
+      p.status = newStatus;
+      showToast(`Product #${id} updated to ${newStatus}`, newStatus === 'Active' ? 'success' : 'warning');
+      renderProducts();
+    };
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    searchInput.addEventListener('input', renderProducts);
+    categoryFilter.addEventListener('change', renderProducts);
+    statusFilter.addEventListener('change', renderProducts);
+    renderProducts();
+  </script>
+</body>
+</html>

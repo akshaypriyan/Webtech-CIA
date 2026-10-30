@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Log in to MarketHub to manage your orders, catalog, or marketplace store.">
+  <title>Sign In - MarketHub</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Dynamic Shared Navbar -->
+  <div id="navbar"></div>
+
+  <!-- Main Login Container -->
+  <main class="auth-page-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h1>Welcome Back</h1>
+        <p>Enter your credentials to access your account</p>
+      </div>
+
+      <!-- Alert Banner for Feedback -->
+      <div id="auth-alert" class="alert" style="display: none;" role="alert"></div>
+
+      <!-- Login Form -->
+      <form id="login-form" novalidate>
+        <!-- Email Input -->
+        <div class="form-group">
+          <label for="login-email" class="form-label">
+            Email Address <span class="required">*</span>
+          </label>
+          <div class="input-wrapper">
+            <input 
+              type="email" 
+              id="login-email" 
+              class="form-input" 
+              placeholder="e.g. alex@example.com"
+              required 
+              autocomplete="email"
+            >
+          </div>
+        </div>
+
+        <!-- Password Input -->
+        <div class="form-group">
+          <label for="login-password" class="form-label">
+            Password <span class="required">*</span>
+          </label>
+          <div class="input-wrapper">
+            <input 
+              type="password" 
+              id="login-password" 
+              class="form-input" 
+              placeholder="••••••••" 
+              required
+              autocomplete="current-password"
+            >
+            <button 
+              type="button" 
+              class="toggle-password-btn" 
+              data-target="login-password"
+              aria-label="Toggle password visibility"
+            >Show</button>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="form-group mt-4">
+          <button type="submit" id="login-submit-btn" class="btn btn-primary btn-block btn-lg">
+            Sign In
+          </button>
+        </div>
+      </form>
+
+      <!-- Demo Accounts Info Helper -->
+      <div style="background: var(--neutral-50); border: 1px dashed var(--neutral-300); border-radius: var(--radius-sm); padding: var(--space-3); margin-top: var(--space-5); font-size: 0.8rem; color: var(--neutral-600);">
+        <strong style="color: var(--neutral-800);">Quick Demo Credentials:</strong><br>
+        Password for all: <code>Test@1234</code><br>
+        Customer: <code>customer@market.com</code> | Seller: <code>seller@market.com</code><br>
+        Admin: <code>admin@market.com</code> | Super Admin: <code>superadmin@market.com</code>
+      </div>
+
+      <div class="auth-footer">
+        Don't have an account yet? <a href="register.html" class="font-semibold">Create an account</a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="js/api.js"></script>
+  <script src="js/navbar.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>

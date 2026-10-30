@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Categories - MarketHub Admin</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div id="navbar"></div>
+
+  <main class="py-12">
+    <div class="container">
+      
+      <!-- Page Header -->
+      <div class="admin-page-header">
+        <div class="admin-title-area">
+          <h1>🏷️ Category Taxonomy Management</h1>
+          <p class="admin-subtitle">Organize and manage the product categories available to sellers and customers.</p>
+        </div>
+        <button id="open-add-modal-btn" class="btn btn-primary btn-sm">➕ Add New Category</button>
+      </div>
+
+      <!-- Toolbar: Search & Filter -->
+      <div class="admin-toolbar">
+        <div class="toolbar-filters">
+          <div class="search-input-box">
+            <input type="text" id="category-search-input" class="form-input" placeholder="Search categories by name or keyword...">
+          </div>
+          <select id="category-status-filter" class="form-select" style="max-width: 180px;">
+            <option value="ALL">All Statuses</option>
+            <option value="Active">Active Only</option>
+            <option value="Inactive">Inactive Only</option>
+          </select>
+        </div>
+        <div class="text-sm text-muted">
+          Showing <span id="categories-count" class="font-bold">6</span> categories
+        </div>
+      </div>
+
+      <!-- Categories Data Table -->
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width: 80px;">ID</th>
+              <th style="width: 220px;">Category Name</th>
+              <th>Description</th>
+              <th style="width: 140px; text-align: center;">Products</th>
+              <th style="width: 120px;">Status</th>
+              <th style="width: 160px; text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="categories-table-body">
+            <!-- Dynamically populated or rendered with fallback -->
+            <tr>
+              <td colspan="6" class="text-center py-8 text-muted">Loading categories...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Add / Edit Category Modal -->
+  <div class="modal-overlay" id="category-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-title">Add New Category</h3>
+        <button class="modal-close-btn" id="modal-close-btn">&times;</button>
+      </div>
+      <form id="category-form">
+        <div class="modal-body">
+          <input type="hidden" id="category-id-field">
+
+          <div class="form-group mb-4">
+            <label class="form-label" for="category-name-field">Category Name <span class="required">*</span></label>
+            <input type="text" id="category-name-field" class="form-input" required maxlength="100" placeholder="e.g. Consumer Electronics">
+            <small class="form-hint">Must be distinct and describe catalog groupings.</small>
+          </div>
+
+          <div class="form-group mb-4">
+            <label class="form-label" for="category-desc-field">Description</label>
+            <textarea id="category-desc-field" class="form-textarea" rows="3" placeholder="Brief summary of items classified under this category..."></textarea>
+          </div>
+
+          <div class="form-group mb-2">
+            <label class="form-label" for="category-status-field">Status</label>
+            <select id="category-status-field" class="form-select">
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" id="modal-cancel-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm" id="modal-save-btn">Save Category</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="js/api.js"></script>
+  <script src="js/navbar.js"></script>
+  <script>
+    // Guard page access
+    requireRole('Admin', 'Super Admin');
+
+    // Default mock data in case API is offline or database is fresh
+    let categoriesList = [
+      { category_id: 1, category_name: 'Electronics', description: 'Smartphones, laptops, audio equipment, gaming, and cutting-edge tech gadgets.', status: 'Active', product_count: 24 },
+      { category_id: 2, category_name: 'Fashion', description: 'Apparel, footwear, accessories, and seasonal collections for men and women.', status: 'Active', product_count: 18 },
+      { category_id: 3, category_name: 'Home & Kitchen', description: 'Furniture, cookware, modern appliances, smart lighting, and home decor.', status: 'Active', product_count: 12 },
+      { category_id: 4, category_name: 'Books', description: 'Bestsellers, academic textbooks, fiction, non-fiction, and personal development.', status: 'Active', product_count: 35 },
+      { category_id: 5, category_name: 'Beauty', description: 'Skincare, grooming, fragrances, makeup, and organic personal care products.', status: 'Active', product_count: 15 },
+      { category_id: 6, category_name: 'Sports', description: 'Athletic gear, fitness equipment, sportswear, outdoor camping, and hydration.', status: 'Active', product_count: 9 }
+    ];
+
+    const tbody = document.getElementById('categories-table-body');
+    const modal = document.getElementById('category-modal');
+    const form = document.getElementById('category-form');
+    const modalTitle = document.getElementById('modal-title');
+    const searchInput = document.getElementById('category-search-input');
+    const statusFilter = document.getElementById('category-status-filter');
+
+    // Fetch live categories from API with fallback
+    async function loadCategories() {
+      try {
+        const res = await apiFetch('/categories');
+        if (res && res.data && Array.isArray(res.data)) {
+          categoriesList = res.data;
+        }
+      } catch (err) {
+        console.warn('Using mock category data:', err.message);
+      }
+      renderCategories();
+    }
+
+    function renderCategories() {
+      const searchTerm = searchInput.value.toLowerCase().trim();
+      const filterStatus = statusFilter.value;
+
+      const filtered = categoriesList.filter(cat => {
+        const matchesSearch = cat.category_name.toLowerCase().includes(searchTerm) || 
+                              (cat.description && cat.description.toLowerCase().includes(searchTerm));
+        const matchesStatus = filterStatus === 'ALL' || cat.status === filterStatus;
+        return matchesSearch && matchesStatus;
+      });
+
+      document.getElementById('categories-count').textContent = filtered.length;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-muted">No categories found matching your filters.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(cat => `
+        <tr>
+          <td><span class="font-mono text-muted text-sm">#${cat.category_id}</span></td>
+          <td><strong class="font-bold">${escapeHtml(cat.category_name)}</strong></td>
+          <td class="text-muted text-sm" style="max-width: 320px;">${escapeHtml(cat.description || '—')}</td>
+          <td style="text-align: center;"><span class="badge badge-secondary">${cat.product_count || 0}</span></td>
+          <td>
+            <span class="badge ${cat.status === 'Active' ? 'badge-success' : 'badge-danger'}">
+              ${cat.status}
+            </span>
+          </td>
+          <td style="text-align: right;">
+            <div class="action-btn-group">
+              <button class="btn btn-outline btn-sm" onclick="editCategory(${cat.category_id})">Edit</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteCategoryHandler(${cat.category_id}, '${escapeHtml(cat.category_name)}')">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // Modal controls
+    document.getElementById('open-add-modal-btn').addEventListener('click', () => {
+      form.reset();
+      document.getElementById('category-id-field').value = '';
+      modalTitle.textContent = 'Add New Category';
+      modal.classList.add('is-active');
+    });
+
+    const closeModal = () => modal.classList.remove('is-active');
+    document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+    document.getElementById('modal-cancel-btn').addEventListener('click', closeModal);
+
+    // Save Category (Create or Update)
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('category-id-field').value;
+      const name = document.getElementById('category-name-field').value.trim();
+      const description = document.getElementById('category-desc-field').value.trim();
+      const status = document.getElementById('category-status-field').value;
+
+      try {
+        if (id) {
+          // Update API
+          await apiFetch(`/categories/${id}`, {
+            method: 'PUT',
+            body: { category_name: name, description, status }
+          });
+          showToast(`Category "${name}" updated successfully!`, 'success');
+        } else {
+          // Create API
+          await apiFetch('/categories', {
+            method: 'POST',
+            body: { category_name: name, description, status }
+          });
+          showToast(`Category "${name}" created successfully!`, 'success');
+        }
+      } catch (err) {
+        // Fallback for static mock demo
+        if (id) {
+          const index = categoriesList.findIndex(c => c.category_id == id);
+          if (index !== -1) {
+            categoriesList[index] = { ...categoriesList[index], category_name: name, description, status };
+          }
+          showToast(`Category "${name}" updated (Mock)`, 'success');
+        } else {
+          const newId = categoriesList.length ? Math.max(...categoriesList.map(c => c.category_id)) + 1 : 1;
+          categoriesList.push({ category_id: newId, category_name: name, description, status, product_count: 0 });
+          showToast(`Category "${name}" created (Mock)`, 'success');
+        }
+      }
+
+      closeModal();
+      loadCategories();
+    });
+
+    window.editCategory = function(id) {
+      const cat = categoriesList.find(c => c.category_id == id);
+      if (!cat) return;
+      document.getElementById('category-id-field').value = cat.category_id;
+      document.getElementById('category-name-field').value = cat.category_name;
+      document.getElementById('category-desc-field').value = cat.description || '';
+      document.getElementById('category-status-field').value = cat.status;
+      modalTitle.textContent = `Edit Category #${cat.category_id}`;
+      modal.classList.add('is-active');
+    };
+
+    window.deleteCategoryHandler = async function(id, name) {
+      if (!confirm(`Are you sure you want to delete category "${name}"?`)) return;
+
+      try {
+        await apiFetch(`/categories/${id}`, { method: 'DELETE' });
+        showToast(`Category "${name}" removed!`, 'success');
+      } catch (err) {
+        categoriesList = categoriesList.filter(c => c.category_id != id);
+        showToast(`Category "${name}" removed (Mock)`, 'success');
+      }
+      loadCategories();
+    };
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    searchInput.addEventListener('input', renderCategories);
+    statusFilter.addEventListener('change', renderCategories);
+
+    // Initial load
+    loadCategories();
+  </script>
+</body>
+</html>

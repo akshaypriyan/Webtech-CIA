@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="View and track your customer purchase orders on MarketHub.">
+  <title>My Orders - MarketHub</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .order-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-6);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      transition: all var(--transition-normal);
+    }
+    .order-header-bar {
+      background: var(--neutral-50);
+      padding: var(--space-4) var(--space-6);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-4);
+    }
+    .order-meta-group {
+      display: flex;
+      gap: var(--space-6);
+      flex-wrap: wrap;
+    }
+    .order-meta-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .order-meta-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+    .order-meta-value {
+      font-weight: 700;
+      color: var(--neutral-900);
+      font-size: 0.95rem;
+    }
+    .order-tracker {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      margin: var(--space-6) 0 var(--space-8);
+      padding: 0 var(--space-4);
+    }
+    .order-tracker::before {
+      content: '';
+      position: absolute;
+      top: 14px;
+      left: 36px;
+      right: 36px;
+      height: 3px;
+      background: var(--neutral-200);
+      z-index: 0;
+    }
+    .tracker-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+      gap: var(--space-2);
+    }
+    .tracker-circle {
+      width: 30px;
+      height: 30px;
+      border-radius: var(--radius-full);
+      background: var(--bg-surface);
+      border: 3px solid var(--neutral-300);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--neutral-500);
+      transition: all var(--transition-fast);
+    }
+    .tracker-step.completed .tracker-circle {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: white;
+    }
+    .tracker-step.active .tracker-circle {
+      border-color: var(--primary);
+      background: var(--bg-surface);
+      color: var(--primary);
+      box-shadow: 0 0 0 4px var(--primary-glow);
+    }
+    .tracker-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--neutral-600);
+      white-space: nowrap;
+    }
+    .tracker-step.completed .tracker-label,
+    .tracker-step.active .tracker-label {
+      color: var(--neutral-900);
+      font-weight: 700;
+    }
+    .filter-pills {
+      display: flex;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+      margin-bottom: var(--space-6);
+    }
+    .filter-pill {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      padding: 0.45rem 1rem;
+      border-radius: var(--radius-full);
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      color: var(--neutral-700);
+    }
+    .filter-pill:hover {
+      background: var(--neutral-100);
+    }
+    .filter-pill.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Dynamic Shared Navbar -->
+  <div id="navbar"></div>
+
+  <main class="py-8">
+    <div class="container">
+
+      <!-- Breadcrumbs & Header -->
+      <div class="mb-6">
+        <p class="text-muted" style="font-size: 0.88rem; margin-bottom: 4px;">
+          <a href="index.html">Home</a> &rsaquo; <span>My Orders</span>
+        </p>
+        <div class="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1>My Order History</h1>
+            <p>Track delivery stages, view purchased items, and manage cancellations</p>
+          </div>
+          <a href="customer-dashboard.html" class="btn btn-secondary btn-sm">
+            📊 Customer Dashboard
+          </a>
+        </div>
+      </div>
+
+      <!-- Filter Tabs -->
+      <div class="filter-pills" id="status-filters">
+        <button class="filter-pill active" onclick="filterOrders('All')">All Orders (<span id="count-all">3</span>)</button>
+        <button class="filter-pill" onclick="filterOrders('Pending')">Pending (<span id="count-pending">1</span>)</button>
+        <button class="filter-pill" onclick="filterOrders('Processing')">Processing (<span id="count-processing">1</span>)</button>
+        <button class="filter-pill" onclick="filterOrders('Shipped')">Shipped (<span id="count-shipped">0</span>)</button>
+        <button class="filter-pill" onclick="filterOrders('Delivered')">Delivered (<span id="count-delivered">1</span>)</button>
+        <button class="filter-pill" onclick="filterOrders('Cancelled')">Cancelled (<span id="count-cancelled">0</span>)</button>
+      </div>
+
+      <!-- Orders List Container -->
+      <div id="orders-container">
+        <!-- Rendered dynamically via JavaScript -->
+      </div>
+
+      <!-- Empty State -->
+      <div id="empty-orders-state" class="card text-center py-12" style="display: none;">
+        <div class="card-body py-12">
+          <div style="font-size: 3.5rem; margin-bottom: 1rem;">📦</div>
+          <h2>No Orders Found</h2>
+          <p class="text-muted" style="max-width: 440px; margin: 0 auto 1.5rem;">
+            You haven't placed any orders matching this filter yet. Ready to start shopping?
+          </p>
+          <a href="products.html" class="btn btn-primary btn-lg">Browse Catalog</a>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Global Toast & Scripts -->
+  <div id="toast-container"></div>
+  <script src="js/api.js"></script>
+  <script src="js/navbar.js"></script>
+
+  <script>
+    // Route guard: only Customer can access
+    const currentUser = typeof requireRole === 'function' ? requireRole('Customer') : null;
+
+    // Day 1 Mock Orders Data matching schema: orders & order_items
+    let mockOrders = [
+      {
+        order_id: 1001,
+        order_date: "2026-10-30 18:24:00",
+        total_amount: 149.99,
+        shipping_address: "Flat 402, Royal Residency, Bengaluru, Karnataka - 560029",
+        order_status: "Processing",
+        payment_status: "Paid",
+        items: [
+          {
+            product_name: "Pro Wireless Noise-Cancelling Headphones",
+            seller_name: "AudioTech Official",
+            quantity: 1,
+            price: 149.99,
+            subtotal: 149.99
+          }
+        ]
+      },
+      {
+        order_id: 1002,
+        order_date: "2026-10-29 14:10:00",
+        total_amount: 89.50,
+        shipping_address: "Flat 402, Royal Residency, Bengaluru, Karnataka - 560029",
+        order_status: "Pending",
+        payment_status: "Pending",
+        items: [
+          {
+            product_name: "Custom Mechanical RGB Gaming Keyboard",
+            seller_name: "KeyPro Studios",
+            quantity: 1,
+            price: 89.50,
+            subtotal: 89.50
+          }
+        ]
+      },
+      {
+        order_id: 998,
+        order_date: "2026-10-24 11:05:00",
+        total_amount: 38.50,
+        shipping_address: "#88 Green Meadows, Sector 4, Mumbai, Maharashtra - 400001",
+        order_status: "Delivered",
+        payment_status: "Paid",
+        items: [
+          {
+            product_name: "Clean Code: Handbook of Software Craftsmanship",
+            seller_name: "BookWorm Central",
+            quantity: 1,
+            price: 38.50,
+            subtotal: 38.50
+          }
+        ]
+      }
+    ];
+
+    let currentFilter = 'All';
+
+    function renderOrders() {
+      const container = document.getElementById('orders-container');
+      const emptyState = document.getElementById('empty-orders-state');
+
+      const filtered = mockOrders.filter(o => {
+        if (currentFilter === 'All') return true;
+        return o.order_status === currentFilter;
+      });
+
+      // Update counters
+      document.getElementById('count-all').textContent = mockOrders.length;
+      document.getElementById('count-pending').textContent = mockOrders.filter(o => o.order_status === 'Pending').length;
+      document.getElementById('count-processing').textContent = mockOrders.filter(o => o.order_status === 'Processing').length;
+      document.getElementById('count-shipped').textContent = mockOrders.filter(o => o.order_status === 'Shipped').length;
+      document.getElementById('count-delivered').textContent = mockOrders.filter(o => o.order_status === 'Delivered').length;
+      document.getElementById('count-cancelled').textContent = mockOrders.filter(o => o.order_status === 'Cancelled').length;
+
+      if (filtered.length === 0) {
+        container.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+
+      container.innerHTML = filtered.map(order => {
+        const isCancellable = order.order_status === 'Pending' || order.order_status === 'Processing';
+        const badgeClass = getStatusBadgeClass(order.order_status);
+
+        return `
+          <div class="order-card" id="order-card-${order.order_id}">
+            <!-- Order Header Bar -->
+            <div class="order-header-bar">
+              <div class="order-meta-group">
+                <div class="order-meta-item">
+                  <span class="order-meta-label">Order Number</span>
+                  <span class="order-meta-value">#ORD-${order.order_id}</span>
+                </div>
+                <div class="order-meta-item">
+                  <span class="order-meta-label">Date Placed</span>
+                  <span class="order-meta-value">${formatDate(order.order_date)}</span>
+                </div>
+                <div class="order-meta-item">
+                  <span class="order-meta-label">Total Amount</span>
+                  <span class="order-meta-value" style="color: var(--primary);">$${Number(order.total_amount).toFixed(2)}</span>
+                </div>
+                <div class="order-meta-item">
+                  <span class="order-meta-label">Payment</span>
+                  <span class="badge ${order.payment_status === 'Paid' ? 'badge-success' : 'badge-warning'}">
+                    ${order.payment_status}
+                  </span>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <span class="badge ${badgeClass}" style="font-size: 0.85rem; padding: 0.35rem 0.85rem;">
+                  ${order.order_status}
+                </span>
+                ${isCancellable ? `
+                  <button class="btn btn-danger btn-sm" onclick="cancelOrder(${order.order_id})">
+                    Cancel Order
+                  </button>
+                ` : `
+                  <button class="btn btn-secondary btn-sm" disabled title="Orders cannot be cancelled once Shipped or Delivered">
+                    Cancellation Locked
+                  </button>
+                `}
+              </div>
+            </div>
+
+            <div class="card-body">
+              <!-- Visual Order Progression Tracker (unless cancelled) -->
+              ${order.order_status !== 'Cancelled' ? renderTracker(order.order_status) : `
+                <div class="alert alert-danger mb-6">
+                  <span>❌ This order was cancelled. Stock has been restored and payment status updated.</span>
+                </div>
+              `}
+
+              <!-- Shipping Address -->
+              <div class="mb-4" style="font-size: 0.88rem; color: var(--neutral-600);">
+                📍 <strong>Shipping To:</strong> ${escapeHtml(order.shipping_address)}
+              </div>
+
+              <!-- Order Items List -->
+              <div class="table-responsive">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Product Description</th>
+                      <th>Seller</th>
+                      <th class="text-center">Quantity</th>
+                      <th class="text-right">Price</th>
+                      <th class="text-right">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${order.items.map(item => `
+                      <tr>
+                        <td><strong>${escapeHtml(item.product_name)}</strong></td>
+                        <td class="text-muted">${escapeHtml(item.seller_name)}</td>
+                        <td class="text-center">${item.quantity}</td>
+                        <td class="text-right">$${Number(item.price).toFixed(2)}</td>
+                        <td class="text-right font-semibold">$${Number(item.subtotal).toFixed(2)}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderTracker(status) {
+      const steps = ['Placed', 'Processing', 'Shipped', 'Delivered'];
+      const statusMap = {
+        'Pending': 0,
+        'Processing': 1,
+        'Shipped': 2,
+        'Delivered': 3
+      };
+      const activeIdx = statusMap[status] !== undefined ? statusMap[status] : 0;
+
+      return `
+        <div class="order-tracker">
+          ${steps.map((label, idx) => {
+            let stateClass = '';
+            let icon = idx + 1;
+            if (idx < activeIdx) {
+              stateClass = 'completed';
+              icon = '✓';
+            } else if (idx === activeIdx) {
+              stateClass = 'active';
+            }
+            return `
+              <div class="tracker-step ${stateClass}">
+                <div class="tracker-circle">${icon}</div>
+                <div class="tracker-label">${label}</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    function getStatusBadgeClass(status) {
+      switch (status) {
+        case 'Pending': return 'badge-warning';
+        case 'Processing': return 'badge-primary';
+        case 'Shipped': return 'badge-primary';
+        case 'Delivered': return 'badge-success';
+        case 'Cancelled': return 'badge-danger';
+        default: return 'badge-neutral';
+      }
+    }
+
+    function cancelOrder(orderId) {
+      const order = mockOrders.find(o => o.order_id === orderId);
+      if (!order) return;
+
+      if (!['Pending', 'Processing'].includes(order.order_status)) {
+        showToast('Only Pending or Processing orders can be cancelled.', 'error');
+        return;
+      }
+
+      if (confirm(`Are you sure you want to cancel Order #ORD-${orderId}? Stock will be replenished.`)) {
+        order.order_status = 'Cancelled';
+        order.payment_status = 'Refunded';
+        renderOrders();
+        showToast(`Order #ORD-${orderId} has been successfully cancelled.`, 'success');
+      }
+    }
+
+    function filterOrders(status) {
+      currentFilter = status;
+      document.querySelectorAll('.filter-pill').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.startsWith(status));
+      });
+      renderOrders();
+    }
+
+    function formatDate(dtStr) {
+      try {
+        const d = new Date(dtStr);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      } catch (e) {
+        return dtStr;
+      }
+    }
+
+    function escapeHtml(str) {
+      return (str || '').replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+      }[m]));
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Check for query param from checkout
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('orderPlaced') === 'true') {
+        showToast('🎉 Your new order was placed successfully!', 'success', 4000);
+      }
+      renderOrders();
+    });
+  </script>
+</body>
+</html>

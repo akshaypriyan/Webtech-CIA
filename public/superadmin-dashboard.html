@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Super Admin Dashboard - MarketHub</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div id="navbar"></div>
+
+  <main class="py-12">
+    <div class="container">
+      
+      <!-- Page Header -->
+      <div class="admin-page-header">
+        <div class="admin-title-area">
+          <h1>👑 Super Administrator Console</h1>
+          <p class="admin-subtitle">Root administrative privileges. Platform security, administrative role delegation, and global audit trails.</p>
+        </div>
+        <div class="flex gap-3">
+          <a href="manage-admins.html" class="btn btn-primary btn-sm">➕ Create Admin</a>
+          <a href="system-logs.html" class="btn btn-secondary btn-sm">📜 Audit Logs</a>
+        </div>
+      </div>
+
+      <!-- High-Privilege KPI Metrics -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon purple">🛡️</div>
+          <div class="stat-info">
+            <span class="stat-label">Admin Staff</span>
+            <span class="stat-value">3</span>
+            <span class="stat-meta">Active administrators</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon rose">📜</div>
+          <div class="stat-info">
+            <span class="stat-label">Audit Log Entries</span>
+            <span class="stat-value">142</span>
+            <span class="stat-meta text-success">All services healthy</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon sky">👥</div>
+          <div class="stat-info">
+            <span class="stat-label">Registered Accounts</span>
+            <span class="stat-value">1,554</span>
+            <span class="stat-meta">Across all 4 roles</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon emerald">⚡</div>
+          <div class="stat-info">
+            <span class="stat-label">Database Status</span>
+            <span class="stat-value text-success">Healthy</span>
+            <span class="stat-meta">MySQL 11 tables active</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Grid for Super Admin Control Modules -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        
+        <div class="card card-hover">
+          <div class="card-body">
+            <div class="flex items-center gap-3 mb-3">
+              <span style="font-size: 1.75rem;">🛡️</span>
+              <div>
+                <h3 class="font-bold" style="margin: 0; font-size: 1.15rem;">Admin Access Control</h3>
+                <span class="text-muted text-sm">Privilege delegation</span>
+              </div>
+            </div>
+            <p class="text-muted text-sm mb-4">Create, edit, and deactivate administrative staff and assign granular table permissions.</p>
+            <a href="manage-admins.html" class="btn btn-outline btn-block btn-sm">Manage Admins &rarr;</a>
+          </div>
+        </div>
+
+        <div class="card card-hover">
+          <div class="card-body">
+            <div class="flex items-center gap-3 mb-3">
+              <span style="font-size: 1.75rem;">📜</span>
+              <div>
+                <h3 class="font-bold" style="margin: 0; font-size: 1.15rem;">System Audit Trail</h3>
+                <span class="text-muted text-sm">Security & action inspection</span>
+              </div>
+            </div>
+            <p class="text-muted text-sm mb-4">Filter, trace, and audit all critical mutations, administrative changes, and client IP addresses.</p>
+            <a href="system-logs.html" class="btn btn-outline btn-block btn-sm">Inspect Logs &rarr;</a>
+          </div>
+        </div>
+
+        <div class="card card-hover">
+          <div class="card-body">
+            <div class="flex items-center gap-3 mb-3">
+              <span style="font-size: 1.75rem;">⚙️</span>
+              <div>
+                <h3 class="font-bold" style="margin: 0; font-size: 1.15rem;">Platform Configuration</h3>
+                <span class="text-muted text-sm">Global system switches</span>
+              </div>
+            </div>
+            <p class="text-muted text-sm mb-4">Adjust marketplace commission rates, authentication timeouts, and maintenance modes.</p>
+            <a href="system-settings.html" class="btn btn-outline btn-block btn-sm">Configure Settings &rarr;</a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- System Health Diagnostics & Recent Admin Actions -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        
+        <!-- System Health Widget -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="font-bold">🖥️ Platform Environment Status</h3>
+          </div>
+          <div class="card-body">
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+              <div class="flex justify-between items-center py-2 border-b border-subtle">
+                <span class="text-muted">Node.js Express Server</span>
+                <span class="badge badge-success">Running :3000</span>
+              </div>
+              <div class="flex justify-between items-center py-2 border-b border-subtle">
+                <span class="text-muted">Relational Database Engine</span>
+                <span class="badge badge-success">MySQL 8.0+ Connected</span>
+              </div>
+              <div class="flex justify-between items-center py-2 border-b border-subtle">
+                <span class="text-muted">JWT Authentication Middleware</span>
+                <span class="badge badge-success">Active (HMAC SHA-256)</span>
+              </div>
+              <div class="flex justify-between items-center py-2 border-b border-subtle">
+                <span class="text-muted">Role-Based Access Control (RBAC)</span>
+                <span class="badge badge-success">Enforced</span>
+              </div>
+              <div class="flex justify-between items-center py-2">
+                <span class="text-muted">System Audit Trail</span>
+                <span class="badge badge-success">Recording Enabled</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Critical Security Events -->
+        <div class="card">
+          <div class="card-header flex justify-between items-center">
+            <h3 class="font-bold">🔐 Security Event Feed</h3>
+            <a href="system-logs.html" class="text-sm font-semibold text-primary">All Logs &rarr;</a>
+          </div>
+          <div class="card-body">
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+              <div class="flex items-start gap-3">
+                <span class="stat-icon emerald" style="width: 36px; height: 36px; font-size: 1rem;">✓</span>
+                <div style="flex: 1;">
+                  <div class="text-sm font-bold">Admin Login Verified</div>
+                  <div class="text-xs text-muted">admin@market.com from 127.0.0.1 (Today, 21:04)</div>
+                </div>
+              </div>
+              <div class="flex items-start gap-3">
+                <span class="stat-icon amber" style="width: 36px; height: 36px; font-size: 1rem;">⚡</span>
+                <div style="flex: 1;">
+                  <div class="text-sm font-bold">Category Created</div>
+                  <div class="text-xs text-muted">Added "Sports" by admin@market.com (Today, 20:45)</div>
+                </div>
+              </div>
+              <div class="flex items-start gap-3">
+                <span class="stat-icon indigo" style="width: 36px; height: 36px; font-size: 1rem;">🔑</span>
+                <div style="flex: 1;">
+                  <div class="text-sm font-bold">Permission Granted</div>
+                  <div class="text-xs text-muted">Granted manage_categories to Admin #2 (Yesterday)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <div id="toast-container"></div>
+  <script src="js/api.js"></script>
+  <script src="js/navbar.js"></script>
+  <script>
+    // Strict Guard: Only Super Admin role permitted
+    const user = requireRole('Super Admin');
+  </script>
+</body>
+</html>

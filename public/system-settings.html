@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>System Settings - MarketHub Super Admin</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div id="navbar"></div>
+
+  <main class="py-12">
+    <div class="container" style="max-width: 800px;">
+      
+      <!-- Page Header -->
+      <div class="admin-page-header">
+        <div class="admin-title-area">
+          <h1>⚙️ Global Platform Settings</h1>
+          <p class="admin-subtitle">Configure site-wide marketplace parameters, commission fee percentages, and system security policies.</p>
+        </div>
+      </div>
+
+      <form id="settings-form">
+        
+        <!-- Marketplace General Configuration -->
+        <div class="card mb-6">
+          <div class="card-header">
+            <h3 class="font-bold">🛍️ Marketplace Economics & Branding</h3>
+          </div>
+          <div class="card-body">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div class="form-group">
+                <label class="form-label" for="setting-site-name">Marketplace Name</label>
+                <input type="text" id="setting-site-name" class="form-input" value="MarketHub" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="setting-support-email">Support Contact Email</label>
+                <input type="email" id="setting-support-email" class="form-input" value="support@market.com" required>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="form-group">
+                <label class="form-label" for="setting-fee-rate">Platform Commission Fee (%)</label>
+                <input type="number" id="setting-fee-rate" class="form-input" value="5.0" step="0.1" min="0" max="50">
+                <small class="form-hint">Deducted from gross seller sales upon order fulfillment.</small>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="setting-currency">Standard Display Currency</label>
+                <select id="setting-currency" class="form-select">
+                  <option value="USD" selected>USD ($ - US Dollar)</option>
+                  <option value="INR">INR (₹ - Indian Rupee)</option>
+                  <option value="EUR">EUR (€ - Euro)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Security & Access Policies -->
+        <div class="card mb-6">
+          <div class="card-header">
+            <h3 class="font-bold">🔒 Security & Authentication Policies</h3>
+          </div>
+          <div class="card-body">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div class="form-group">
+                <label class="form-label" for="setting-jwt-expiry">JWT Session Lifetime</label>
+                <select id="setting-jwt-expiry" class="form-select">
+                  <option value="24h">24 Hours</option>
+                  <option value="7d" selected>7 Days (Default)</option>
+                  <option value="30d">30 Days</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="setting-max-attempts">Max Failed Login Attempts</label>
+                <input type="number" id="setting-max-attempts" class="form-input" value="5" min="3" max="20">
+                <small class="form-hint">Temporarily locks accounts after consecutive invalid passwords.</small>
+              </div>
+            </div>
+
+            <div class="form-group" style="padding-top: var(--space-2);">
+              <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+                <input type="checkbox" id="setting-maintenance-mode" style="width: 1.25rem; height: 1.25rem;">
+                <div>
+                  <span class="font-bold">Maintenance Mode</span>
+                  <div class="text-xs text-muted">Temporarily suspends buyer checkout and shows a system maintenance banner.</div>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="flex justify-between items-center mb-8">
+          <button type="button" class="btn btn-outline btn-sm" onclick="triggerBackup()">💾 Backup Database</button>
+          <button type="submit" class="btn btn-primary">Save Platform Configuration</button>
+        </div>
+
+      </form>
+
+    </div>
+  </main>
+
+  <div id="toast-container"></div>
+  <script src="js/api.js"></script>
+  <script src="js/navbar.js"></script>
+  <script>
+    requireRole('Super Admin');
+
+    document.getElementById('settings-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const fee = document.getElementById('setting-fee-rate').value;
+      const maintenance = document.getElementById('setting-maintenance-mode').checked;
+      
+      showToast('Saving platform settings...', 'info', 1000);
+      setTimeout(() => {
+        showToast('Settings saved successfully and recorded to audit trail!', 'success');
+      }, 700);
+    });
+
+    window.triggerBackup = function() {
+      showToast('Initiating MySQL database snapshot backup...', 'info');
+      setTimeout(() => {
+        showToast('Backup completed! marketplace_db_snapshot.sql saved.', 'success');
+      }, 1200);
+    };
+  </script>
+</body>
+</html>

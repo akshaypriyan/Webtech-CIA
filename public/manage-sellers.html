@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Sellers - MarketHub Admin</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div id="navbar"></div>
+
+  <main class="py-12">
+    <div class="container">
+      
+      <!-- Page Header -->
+      <div class="admin-page-header">
+        <div class="admin-title-area">
+          <h1>🏪 Seller Onboarding & Governance</h1>
+          <p class="admin-subtitle">Approve merchant registrations, monitor store compliance, and manage vendor privileges.</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="admin-tabs">
+        <button class="admin-tab active" data-tab="ALL">All Merchants (<span id="tab-all-count">4</span>)</button>
+        <button class="admin-tab" data-tab="Pending">Pending Approvals (<span id="tab-pending-count" class="text-warning font-bold">2</span>)</button>
+        <button class="admin-tab" data-tab="Active">Active Stores (<span id="tab-active-count">2</span>)</button>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="admin-toolbar">
+        <div class="toolbar-filters">
+          <div class="search-input-box">
+            <input type="text" id="seller-search-input" class="form-input" placeholder="Search by merchant name, email, or store...">
+          </div>
+        </div>
+        <div class="text-sm text-muted">
+          Showing <span id="seller-count" class="font-bold">4</span> merchants
+        </div>
+      </div>
+
+      <!-- Sellers Table -->
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width: 80px;">ID</th>
+              <th>Merchant / Store</th>
+              <th>Contact Details</th>
+              <th>Catalog Size</th>
+              <th>Status</th>
+              <th style="text-align: right; width: 220px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="sellers-table-body">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="toast-container"></div>
+  <script src="js/api.js"></script>
+  <script src="js/navbar.js"></script>
+  <script>
+    requireRole('Admin', 'Super Admin');
+
+    let sellers = [
+      { user_id: 201, name: 'Nova Tech Retailers', email: 'seller@market.com', mobile: '9845123456', products: 14, status: 'Active', applied: '2026-10-12' },
+      { user_id: 202, name: 'Urban Threads Studio', email: 'urban.threads@example.com', mobile: '9876599881', products: 8, status: 'Active', applied: '2026-10-16' },
+      { user_id: 203, name: 'EcoLiving Botanicals', email: 'contact@ecoliving.org', mobile: '9811223344', products: 0, status: 'Pending', applied: '2026-10-29' },
+      { user_id: 204, name: 'Apex Gear Direct', email: 'support@apexgear.net', mobile: '9744332211', products: 0, status: 'Pending', applied: '2026-10-30' }
+    ];
+
+    let currentTab = 'ALL';
+    const tbody = document.getElementById('sellers-table-body');
+    const searchInput = document.getElementById('seller-search-input');
+
+    function updateTabCounts() {
+      document.getElementById('tab-all-count').textContent = sellers.length;
+      document.getElementById('tab-pending-count').textContent = sellers.filter(s => s.status === 'Pending').length;
+      document.getElementById('tab-active-count').textContent = sellers.filter(s => s.status === 'Active').length;
+    }
+
+    function renderSellers() {
+      const q = searchInput.value.toLowerCase().trim();
+
+      const filtered = sellers.filter(s => {
+        const matchesQuery = s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q) || s.mobile.includes(q);
+        const matchesTab = currentTab === 'ALL' || s.status === currentTab;
+        return matchesQuery && matchesTab;
+      });
+
+      document.getElementById('seller-count').textContent = filtered.length;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-muted">No merchants found in this view.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(s => `
+        <tr>
+          <td><span class="font-mono text-muted text-sm">#${s.user_id}</span></td>
+          <td>
+            <div class="font-bold">${escapeHtml(s.name)}</div>
+            <div class="text-muted text-sm">Applied ${s.applied}</div>
+          </td>
+          <td>
+            <div>${escapeHtml(s.email)}</div>
+            <div class="text-muted text-sm">${escapeHtml(s.mobile)}</div>
+          </td>
+          <td><span class="badge badge-secondary">${s.products} listings</span></td>
+          <td>
+            <span class="badge ${s.status === 'Active' ? 'badge-success' : (s.status === 'Pending' ? 'badge-warning' : 'badge-danger')}">
+              ${s.status}
+            </span>
+          </td>
+          <td style="text-align: right;">
+            <div class="action-btn-group">
+              ${s.status === 'Pending' 
+                ? `
+                  <button class="btn btn-primary btn-sm" onclick="setSellerStatus(${s.user_id}, 'Active')">Approve</button>
+                  <button class="btn btn-danger btn-sm" onclick="setSellerStatus(${s.user_id}, 'Blocked')">Reject</button>
+                `
+                : (s.status === 'Active'
+                  ? `<button class="btn btn-outline btn-sm text-danger" onclick="setSellerStatus(${s.user_id}, 'Blocked')">Suspend</button>`
+                  : `<button class="btn btn-secondary btn-sm" onclick="setSellerStatus(${s.user_id}, 'Active')">Reactivate</button>`
+                )
+              }
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    window.setSellerStatus = function(id, newStatus) {
+      const seller = sellers.find(s => s.user_id === id);
+      if (!seller) return;
+      seller.status = newStatus;
+      showToast(`Merchant "${seller.name}" updated to status: ${newStatus}`, newStatus === 'Active' ? 'success' : 'info');
+      updateTabCounts();
+      renderSellers();
+    };
+
+    document.querySelectorAll('.admin-tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentTab = tab.dataset.tab;
+        renderSellers();
+      });
+    });
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    searchInput.addEventListener('input', renderSellers);
+    updateTabCounts();
+    renderSellers();
+  </script>
+</body>
+</html>
