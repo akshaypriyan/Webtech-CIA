@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Add Product | Seller Portal</title>
+  <link rel="stylesheet" href="css/seller.css">
+</head>
+<body>
+  <button type="button" class="menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="seller-sidebar">Menu</button>
+  <div class="app">
+    <aside class="sidebar" id="seller-sidebar" aria-label="Seller navigation"></aside>
+
+    <main class="content">
+      <header class="page-header">
+        <div>
+          <h1>Add Product</h1>
+          <p>Create a new listing for your store.</p>
+        </div>
+        <a class="btn btn--secondary" href="seller-products.html">&larr; Back to products</a>
+      </header>
+
+      <p class="demo-note">Demo form &mdash; validation runs in the browser, but nothing is submitted or uploaded.</p>
+
+      <form id="product-form" novalidate>
+        <div class="form-layout">
+          <section class="card" aria-label="Product details">
+            <div class="field">
+              <label for="name">Product name <span class="req" aria-hidden="true">*</span></label>
+              <input type="text" id="name" name="name" maxlength="100" required aria-describedby="name-error">
+              <span class="error" id="name-error"></span>
+            </div>
+
+            <div class="field">
+              <label for="description">Description <span class="req" aria-hidden="true">*</span></label>
+              <textarea id="description" name="description" maxlength="1000" required aria-describedby="description-hint description-error"></textarea>
+              <span class="hint" id="description-hint"><span id="desc-count">0</span>/1000 characters</span>
+              <span class="error" id="description-error"></span>
+            </div>
+
+            <div class="field">
+              <label for="category">Category <span class="req" aria-hidden="true">*</span></label>
+              <select id="category" name="category" required aria-describedby="category-error">
+                <option value="">Select a category</option>
+              </select>
+              <span class="error" id="category-error"></span>
+            </div>
+
+            <div class="form-row">
+              <div class="field">
+                <label for="price">Price ($) <span class="req" aria-hidden="true">*</span></label>
+                <input type="number" id="price" name="price" min="0.01" max="99999.99" step="0.01" inputmode="decimal" required aria-describedby="price-error">
+                <span class="error" id="price-error"></span>
+              </div>
+              <div class="field">
+                <label for="stock">Stock quantity <span class="req" aria-hidden="true">*</span></label>
+                <input type="number" id="stock" name="stock" min="0" max="100000" step="1" inputmode="numeric" required aria-describedby="stock-error">
+                <span class="error" id="stock-error"></span>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn--primary">Save product</button>
+              <button type="reset" class="btn btn--secondary" id="reset-btn">Reset</button>
+            </div>
+          </section>
+
+          <section class="card" aria-label="Product image">
+            <div class="field">
+              <label for="image">Product image</label>
+              <input type="file" id="image" name="image" accept="image/png,image/jpeg,image/webp" aria-describedby="image-hint image-error">
+              <span class="hint" id="image-hint">PNG, JPG or WebP, up to 2&nbsp;MB. Optional.</span>
+              <span class="error" id="image-error"></span>
+            </div>
+            <div class="image-preview" id="image-preview" aria-live="polite">No image selected</div>
+          </section>
+        </div>
+      </form>
+    </main>
+  </div>
+
+  <script src="js/seller-data.js"></script>
+  <script src="js/seller-layout.js"></script>
+  <script src="js/add-product.js"></script>
+</body>
+</html>
