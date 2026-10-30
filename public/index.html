@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="MarketHub - Premier multi-vendor online marketplace supporting customers, sellers, and administrators.">
+  <title>MarketHub - Online Marketplace</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Dynamic Shared Navbar -->
+  <div id="navbar"></div>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="container">
+        <div class="hero-content">
+          <div class="hero-badge">
+            <span>✨ Full-Stack Multi-Role E-Commerce</span>
+          </div>
+          <h1 class="hero-title">
+            Discover, Shop & Sell With Confidence
+          </h1>
+          <p class="hero-subtitle">
+            A collaborative multi-vendor platform bridging customers, independent sellers, 
+            and platform administrators with secure transactions and live audit logging.
+          </p>
+          <div class="hero-actions">
+            <a href="products.html" class="btn btn-primary btn-lg">Browse Catalog</a>
+            <a href="register.html" class="btn btn-secondary btn-lg">Open a Seller Store</a>
+            <a href="login.html" class="btn btn-outline btn-lg" style="color: white; border-color: rgba(255,255,255,0.4);">Sign In</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Featured Categories Section -->
+    <section class="py-12">
+      <div class="container">
+        <div class="flex items-center justify-between mb-8 flex-wrap gap-4">
+          <div>
+            <h2>Explore Categories</h2>
+            <p>Curated departments stocked with top verified products</p>
+          </div>
+          <a href="products.html" class="btn btn-outline btn-sm">View All Categories &rarr;</a>
+        </div>
+
+        <div class="grid grid-cols-3 gap-6" id="categories-grid">
+          <div class="category-card">
+            <div class="category-icon">⚡</div>
+            <h3 class="category-title">Electronics</h3>
+            <p class="text-muted" style="font-size: 0.88rem; margin: 0;">Laptops, audio, gaming & smart gadgets</p>
+          </div>
+
+          <div class="category-card">
+            <div class="category-icon">👗</div>
+            <h3 class="category-title">Fashion</h3>
+            <p class="text-muted" style="font-size: 0.88rem; margin: 0;">Apparel, luxury leather & street wear</p>
+          </div>
+
+          <div class="category-card">
+            <div class="category-icon">🍳</div>
+            <h3 class="category-title">Home & Kitchen</h3>
+            <p class="text-muted" style="font-size: 0.88rem; margin: 0;">Modern cookware, smart fryers & appliances</p>
+          </div>
+
+          <div class="category-card">
+            <div class="category-icon">📚</div>
+            <h3 class="category-title">Books</h3>
+            <p class="text-muted" style="font-size: 0.88rem; margin: 0;">Programming bestsellers, fiction & non-fiction</p>
+          </div>
+
+          <div class="category-card">
+            <div class="category-icon">✨</div>
+            <h3 class="category-title">Beauty & Wellness</h3>
+            <p class="text-muted" style="font-size: 0.88rem; margin: 0;">Clean skincare, serums & luxury grooming</p>
+          </div>
+
+          <div class="category-card">
+            <div class="category-icon">⚽</div>
+            <h3 class="category-title">Sports & Outdoors</h3>
+            <p class="text-muted" style="font-size: 0.88rem; margin: 0;">Gym equipment, footwear & camping gear</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Platform Highlights Section -->
+    <section class="py-12" style="background: var(--neutral-100); border-top: 1px solid var(--border-subtle); border-bottom: 1px solid var(--border-subtle);">
+      <div class="container">
+        <div class="text-center mb-8">
+          <h2>Platform Architecture Highlights</h2>
+          <p>Engineered for high performance, security, and scalability</p>
+        </div>
+
+        <div class="grid grid-cols-4 gap-6">
+          <div class="card card-hover">
+            <div class="card-body">
+              <div style="font-size: 1.8rem; margin-bottom: var(--space-2);">🛡️</div>
+              <h4 class="mb-2">4-Role RBAC</h4>
+              <p style="font-size: 0.88rem; margin: 0;">Segregated access for Customers, Sellers, Admins, and Super Admins via JWT.</p>
+            </div>
+          </div>
+
+          <div class="card card-hover">
+            <div class="card-body">
+              <div style="font-size: 1.8rem; margin-bottom: var(--space-2);">📦</div>
+              <h4 class="mb-2">Multi-Vendor Store</h4>
+              <p style="font-size: 0.88rem; margin: 0;">Independent seller management, order splitting, and item fulfillment.</p>
+            </div>
+          </div>
+
+          <div class="card card-hover">
+            <div class="card-body">
+              <div style="font-size: 1.8rem; margin-bottom: var(--space-2);">📜</div>
+              <h4 class="mb-2">System Audit Trail</h4>
+              <p style="font-size: 0.88rem; margin: 0;">Persistent logging of user actions and security events to system_logs.</p>
+            </div>
+          </div>
+
+          <div class="card card-hover">
+            <div class="card-body">
+              <div style="font-size: 1.8rem; margin-bottom: var(--space-2);">⚡</div>
+              <h4 class="mb-2">Pure Vanilla Stack</h4>
+              <p style="font-size: 0.88rem; margin: 0;">Ultra-responsive HTML5, modern CSS3, and Fetch API with zero bloated frameworks.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="flex justify-between items-center flex-wrap gap-4">
+        <div>
+          <span style="font-weight: 800; font-size: 1.25rem; color: white;">Market<span class="brand-highlight">Hub</span></span>
+          <p style="color: var(--neutral-500); font-size: 0.88rem; margin-top: 4px;">Online Marketplace Web Application — Web Tech CIA Project</p>
+        </div>
+        <div class="flex gap-4">
+          <a href="login.html" style="color: var(--neutral-400);">Login</a>
+          <a href="register.html" style="color: var(--neutral-400);">Register</a>
+          <a href="api/health" target="_blank" style="color: var(--neutral-400);">API Status</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div>&copy; 2026 MarketHub Team. Built with Node.js, Express, MySQL & Vanilla JS.</div>
+        <div style="color: var(--neutral-500);">Person 1: Auth & Storefront Foundation</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="js/api.js"></script>
+  <script src="js/navbar.js"></script>
+</body>
+</html>

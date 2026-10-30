@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Register an account on MarketHub as a customer or seller.">
+  <title>Create Account - MarketHub</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Dynamic Shared Navbar -->
+  <div id="navbar"></div>
+
+  <!-- Main Register Container -->
+  <main class="auth-page-wrapper">
+    <div class="auth-card" style="max-width: 540px;">
+      <div class="auth-header">
+        <h1>Create Your Account</h1>
+        <p>Join MarketHub today to start shopping or selling products</p>
+      </div>
+
+      <!-- Alert Banner -->
+      <div id="auth-alert" class="alert" style="display: none;" role="alert"></div>
+
+      <!-- Register Form -->
+      <form id="register-form" novalidate>
+        
+        <!-- Account Role Selection -->
+        <div class="form-group">
+          <label class="form-label">
+            Account Type <span class="required">*</span>
+          </label>
+          <div class="role-selector-grid">
+            <label class="role-card-option is-selected">
+              <input type="radio" name="role" value="Customer" checked>
+              <div class="role-title">
+                <span>🛍️ Customer</span>
+              </div>
+              <p class="role-desc">Browse goods, buy products, and track orders</p>
+            </label>
+
+            <label class="role-card-option">
+              <input type="radio" name="role" value="Seller">
+              <div class="role-title">
+                <span>🏪 Seller</span>
+              </div>
+              <p class="role-desc">List products & fulfill orders (requires admin approval)</p>
+            </label>
+          </div>
+        </div>
+
+        <!-- Full Name -->
+        <div class="form-group">
+          <label for="reg-name" class="form-label">
+            Full Name <span class="required">*</span>
+          </label>
+          <input 
+            type="text" 
+            id="reg-name" 
+            class="form-input" 
+            placeholder="e.g. Alex Johnson"
+            required 
+            autocomplete="name"
+          >
+          <span class="form-error" id="reg-name-error"></span>
+        </div>
+
+        <!-- Email Address -->
+        <div class="form-group">
+          <label for="reg-email" class="form-label">
+            Email Address <span class="required">*</span>
+          </label>
+          <input 
+            type="email" 
+            id="reg-email" 
+            class="form-input" 
+            placeholder="e.g. alex@example.com"
+            required 
+            autocomplete="email"
+          >
+          <span class="form-error" id="reg-email-error"></span>
+        </div>
+
+        <!-- Mobile Number -->
+        <div class="form-group">
+          <label for="reg-mobile" class="form-label">
+            Mobile Number (10 Digits) <span class="required">*</span>
+          </label>
+          <input 
+            type="tel" 
+            id="reg-mobile" 
+            class="form-input" 
+            placeholder="e.g. 9876543210"
+            maxlength="10"
+            required 
+            autocomplete="tel"
+          >
+          <span class="form-error" id="reg-mobile-error"></span>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+          <label for="reg-password" class="form-label">
+            Password (Min. 8 characters) <span class="required">*</span>
+          </label>
+          <div class="input-wrapper">
+            <input 
+              type="password" 
+              id="reg-password" 
+              class="form-input" 
+              placeholder="At least 8 characters" 
+              required
+              autocomplete="new-password"
+            >
+            <button 
+              type="button" 
+              class="toggle-password-btn" 
+              data-target="reg-password"
+              aria-label="Toggle password visibility"
+            >Show</button>
+          </div>
+          <span class="form-error" id="reg-password-error"></span>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="form-group">
+          <label for="reg-confirm-password" class="form-label">
+            Confirm Password <span class="required">*</span>
+          </label>
+          <div class="input-wrapper">
+            <input 
+              type="password" 
+              id="reg-confirm-password" 
+              class="form-input" 
+              placeholder="Re-type your password" 
+              required
+              autocomplete="new-password"
+            >
+            <button 
+              type="button" 
+              class="toggle-password-btn" 
+              data-target="reg-confirm-password"
+              aria-label="Toggle confirm password visibility"
+            >Show</button>
+          </div>
+          <span class="form-error" id="reg-confirm-error"></span>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="form-group mt-4">
+          <button type="submit" id="reg-submit-btn" class="btn btn-primary btn-block btn-lg">
+            Create Account
+          </button>
+        </div>
+      </form>
+
+      <div class="auth-footer">
+        Already have an account? <a href="login.html" class="font-semibold">Sign in here</a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="js/api.js"></script>
+  <script src="js/navbar.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>
