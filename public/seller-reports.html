@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reports | Seller Portal</title>
+  <link rel="stylesheet" href="css/seller.css">
+</head>
+<body>
+  <button type="button" class="menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="seller-sidebar">Menu</button>
+  <div class="app">
+    <aside class="sidebar" id="seller-sidebar" aria-label="Seller navigation"></aside>
+
+    <main class="content">
+      <header class="page-header">
+        <div>
+          <h1>Sales Reports</h1>
+          <p>How your products are performing.</p>
+        </div>
+      </header>
+
+      <p class="demo-note">All figures are illustrative mock data, calculated in the browser from the sample orders. Cancelled orders are excluded.</p>
+
+      <section aria-label="Sales summary" class="stat-grid" id="stats"></section>
+
+      <div class="grid-2">
+        <section class="card" aria-labelledby="weekly-title">
+          <h2 class="card__title" id="weekly-title">Revenue by week</h2>
+          <div class="bars" id="weekly-chart"></div>
+        </section>
+
+        <section class="card" aria-labelledby="best-title">
+          <h2 class="card__title" id="best-title">Best-selling products</h2>
+          <div class="table-wrap">
+            <table class="table table--flush">
+              <thead><tr><th scope="col">Product</th><th scope="col" class="num">Units</th><th scope="col" class="num">Revenue</th></tr></thead>
+              <tbody id="best-sellers"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <section class="card" aria-labelledby="recent-title">
+        <h2 class="card__title" id="recent-title">Recent sales</h2>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th scope="col">Date</th><th scope="col">Order</th><th scope="col">Product</th><th scope="col" class="num">Qty</th><th scope="col" class="num">Amount</th></tr></thead>
+            <tbody id="recent-sales"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="js/seller-data.js"></script>
+  <script src="js/seller-layout.js"></script>
+  <script src="js/seller-reports.js"></script>
+</body>
+</html>
