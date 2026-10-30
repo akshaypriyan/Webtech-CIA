@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seller Dashboard | Marketplace</title>
+  <link rel="stylesheet" href="css/seller.css">
+</head>
+<body>
+  <button type="button" class="menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="seller-sidebar">Menu</button>
+  <div class="app">
+    <aside class="sidebar" id="seller-sidebar" aria-label="Seller navigation"></aside>
+
+    <main class="content">
+      <header class="page-header">
+        <div>
+          <h1>Seller Dashboard</h1>
+          <p>An overview of your marketplace activity.</p>
+        </div>
+        <div class="quick-actions">
+          <a class="btn btn--primary" href="add-product.html">+ Add Product</a>
+          <a class="btn btn--secondary" href="seller-orders.html">View Orders</a>
+        </div>
+      </header>
+
+      <p class="demo-note">Illustrative mock data &mdash; not connected to a backend yet.</p>
+
+      <section aria-label="Overview statistics" class="stat-grid" id="stats"></section>
+
+      <div class="grid-2">
+        <section class="card" aria-labelledby="recent-orders-title">
+          <h2 class="card__title" id="recent-orders-title">Recent orders <a href="seller-orders.html">View all</a></h2>
+          <div class="table-wrap">
+            <table class="table table--flush">
+              <thead><tr><th scope="col">Order</th><th scope="col">Product</th><th scope="col">Status</th><th scope="col" class="num">Total</th></tr></thead>
+              <tbody id="recent-orders"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="low-stock-title">
+          <h2 class="card__title" id="low-stock-title">Low-stock products <a href="seller-products.html">Manage</a></h2>
+          <ul class="list" id="low-stock"></ul>
+        </section>
+      </div>
+
+      <section class="card" aria-labelledby="activity-title">
+        <h2 class="card__title" id="activity-title">Recent activity</h2>
+        <ul class="list" id="activity"></ul>
+      </section>
+    </main>
+  </div>
+
+  <script src="js/seller-data.js"></script>
+  <script src="js/seller-layout.js"></script>
+  <script src="js/seller-dashboard.js"></script>
+</body>
+</html>
