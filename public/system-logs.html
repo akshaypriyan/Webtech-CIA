@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>System Logs - MarketHub Super Admin</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div id="navbar"></div>
+
+  <main class="py-12">
+    <div class="container">
+      
+      <!-- Page Header -->
+      <div class="admin-page-header">
+        <div class="admin-title-area">
+          <h1>📜 System Audit Trail & Security Logs</h1>
+          <p class="admin-subtitle">Inspect chronological system operations, security triggers, and IP addresses across all vertical slices.</p>
+        </div>
+        <div class="flex gap-3">
+          <button id="refresh-logs-btn" class="btn btn-primary btn-sm">🔄 Refresh Logs</button>
+        </div>
+      </div>
+
+      <!-- Filter Toolbar -->
+      <div class="admin-toolbar">
+        <div class="toolbar-filters">
+          <div class="search-input-box">
+            <input type="text" id="log-search-input" class="form-input" placeholder="Search by description, action, or IP...">
+          </div>
+          
+          <select id="log-action-filter" class="form-select" style="max-width: 190px;">
+            <option value="ALL">All Actions</option>
+            <option value="CATEGORY_CREATE">CATEGORY_CREATE</option>
+            <option value="CATEGORY_UPDATE">CATEGORY_UPDATE</option>
+            <option value="CATEGORY_DELETE">CATEGORY_DELETE</option>
+            <option value="SELLER_APPROVE">SELLER_APPROVE</option>
+            <option value="USER_BLOCK">USER_BLOCK</option>
+            <option value="ADMIN_CREATE">ADMIN_CREATE</option>
+            <option value="LOGIN">LOGIN</option>
+          </select>
+
+          <select id="log-role-filter" class="form-select" style="max-width: 160px;">
+            <option value="ALL">All Users</option>
+            <option value="Super Admin">Super Admin</option>
+            <option value="Admin">Admin</option>
+            <option value="System">System / Guest</option>
+          </select>
+        </div>
+        <div class="text-sm text-muted">
+          Showing <span id="log-count" class="font-bold">6</span> events
+        </div>
+      </div>
+
+      <!-- Logs Table -->
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width: 80px;">Log ID</th>
+              <th style="width: 180px;">Timestamp</th>
+              <th style="width: 200px;">User / Role</th>
+              <th style="width: 180px;">Action Verb</th>
+              <th>Description</th>
+              <th style="width: 140px; text-align: right;">Client IP</th>
+            </tr>
+          </thead>
+          <tbody id="logs-table-body">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="toast-container"></div>
+  <script src="js/api.js"></script>
+  <script src="js/navbar.js"></script>
+  <script>
+    requireRole('Super Admin');
+
+    let logs = [
+      { log_id: 1042, created_at: '2026-10-30 22:45:10', user_name: 'superadmin@market.com', role: 'Super Admin', action: 'ADMIN_CREATE', description: 'Created new Admin account for Sarah Connor', ip_address: '127.0.0.1' },
+      { log_id: 1041, created_at: '2026-10-30 22:30:15', user_name: 'admin@market.com', role: 'Admin', action: 'SELLER_APPROVE', description: 'Approved merchant registration for Nova Tech Retailers', ip_address: '127.0.0.1' },
+      { log_id: 1040, created_at: '2026-10-30 21:15:42', user_name: 'admin@market.com', role: 'Admin', action: 'CATEGORY_CREATE', description: 'Created category "Electronics" (ID: 1)', ip_address: '127.0.0.1' },
+      { log_id: 1039, created_at: '2026-10-30 20:55:00', user_name: 'admin@market.com', role: 'Admin', action: 'CATEGORY_CREATE', description: 'Created category "Fashion" (ID: 2)', ip_address: '127.0.0.1' },
+      { log_id: 1038, created_at: '2026-10-30 19:10:22', user_name: 'superadmin@market.com', role: 'Super Admin', action: 'SETTINGS_UPDATE', description: 'Updated commission transaction fee to 5.0%', ip_address: '192.168.1.10' },
+      { log_id: 1037, created_at: '2026-10-30 18:02:11', user_name: 'guest', role: 'System', action: 'LOGIN_FAILED', description: 'Failed authentication attempt for unknown email', ip_address: '45.12.98.11' }
+    ];
+
+    const tbody = document.getElementById('logs-table-body');
+    const searchInput = document.getElementById('log-search-input');
+    const actionFilter = document.getElementById('log-action-filter');
+    const roleFilter = document.getElementById('log-role-filter');
+
+    function renderLogs() {
+      const q = searchInput.value.toLowerCase().trim();
+      const action = actionFilter.value;
+      const role = roleFilter.value;
+
+      const filtered = logs.filter(l => {
+        const matchesQuery = l.description.toLowerCase().includes(q) || 
+                             l.action.toLowerCase().includes(q) || 
+                             (l.ip_address && l.ip_address.includes(q)) ||
+                             l.user_name.toLowerCase().includes(q);
+        const matchesAction = action === 'ALL' || l.action === action;
+        const matchesRole = role === 'ALL' || l.role === role;
+        return matchesQuery && matchesAction && matchesRole;
+      });
+
+      document.getElementById('log-count').textContent = filtered.length;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-muted">No audit logs found matching criteria.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(l => `
+        <tr>
+          <td><span class="font-mono text-muted text-sm">#${l.log_id}</span></td>
+          <td class="text-sm text-muted">${l.created_at}</td>
+          <td>
+            <div class="font-bold text-sm">${escapeHtml(l.user_name)}</div>
+            <span class="badge ${l.role === 'Super Admin' ? 'badge-danger' : (l.role === 'Admin' ? 'badge-warning' : 'badge-secondary')}" style="font-size: 0.65rem;">
+              ${l.role}
+            </span>
+          </td>
+          <td><span class="code-badge">${escapeHtml(l.action)}</span></td>
+          <td class="text-sm">${escapeHtml(l.description)}</td>
+          <td style="text-align: right;"><span class="font-mono text-xs text-muted">${escapeHtml(l.ip_address || '—')}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    document.getElementById('refresh-logs-btn').addEventListener('click', () => {
+      showToast('Refreshing latest system logs...', 'info', 1500);
+      renderLogs();
+    });
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    searchInput.addEventListener('input', renderLogs);
+    actionFilter.addEventListener('change', renderLogs);
+    roleFilter.addEventListener('change', renderLogs);
+    renderLogs();
+  </script>
+</body>
+</html>

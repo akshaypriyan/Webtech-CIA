@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Admins - MarketHub Super Admin</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div id="navbar"></div>
+
+  <main class="py-12">
+    <div class="container">
+      
+      <!-- Page Header -->
+      <div class="admin-page-header">
+        <div class="admin-title-area">
+          <h1>🛡️ Administrator Access Control</h1>
+          <p class="admin-subtitle">Delegate platform responsibilities and assign granular permissions to administrator accounts.</p>
+        </div>
+        <button id="open-add-admin-btn" class="btn btn-primary btn-sm">➕ Add Administrator</button>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="admin-toolbar">
+        <div class="toolbar-filters">
+          <div class="search-input-box">
+            <input type="text" id="admin-search-input" class="form-input" placeholder="Search admins by name or email...">
+          </div>
+          <select id="admin-status-filter" class="form-select" style="max-width: 180px;">
+            <option value="ALL">All Statuses</option>
+            <option value="Active">Active Admins</option>
+            <option value="Inactive">Inactive / Suspended</option>
+          </select>
+        </div>
+        <div class="text-sm text-muted">
+          Showing <span id="admin-count" class="font-bold">3</span> administrators
+        </div>
+      </div>
+
+      <!-- Admins Table -->
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width: 80px;">ID</th>
+              <th>Administrator</th>
+              <th>Contact Details</th>
+              <th>Assigned Permissions</th>
+              <th>Status</th>
+              <th style="text-align: right; width: 220px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="admins-table-body">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Add Admin Modal -->
+  <div class="modal-overlay" id="admin-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="admin-modal-title">Create Administrator Account</h3>
+        <button class="modal-close-btn" id="admin-modal-close-btn">&times;</button>
+      </div>
+      <form id="admin-form">
+        <div class="modal-body">
+          <input type="hidden" id="admin-id-field">
+
+          <div class="form-group mb-4">
+            <label class="form-label" for="admin-name-field">Full Name <span class="required">*</span></label>
+            <input type="text" id="admin-name-field" class="form-input" required placeholder="e.g. Sarah Connor">
+          </div>
+
+          <div class="form-group mb-4">
+            <label class="form-label" for="admin-email-field">Email Address <span class="required">*</span></label>
+            <input type="email" id="admin-email-field" class="form-input" required placeholder="sarah.admin@market.com">
+          </div>
+
+          <div class="form-group mb-4" id="password-group">
+            <label class="form-label" for="admin-password-field">Temporary Password <span class="required">*</span></label>
+            <input type="password" id="admin-password-field" class="form-input" placeholder="Min 6 characters">
+          </div>
+
+          <div class="form-group mb-2">
+            <label class="form-label mb-2">Delegated Permissions</label>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem; background: var(--neutral-50); padding: var(--space-4); border-radius: var(--radius-md);">
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem;">
+                <input type="checkbox" name="permissions" value="manage_categories" checked> Manage Categories (Taxonomy)
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem;">
+                <input type="checkbox" name="permissions" value="manage_users" checked> Manage Customers & Sellers
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem;">
+                <input type="checkbox" name="permissions" value="manage_products"> Moderate Products & Takedowns
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem;">
+                <input type="checkbox" name="permissions" value="view_reports"> View Sales & Financial Reports
+              </label>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" id="admin-modal-cancel-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm" id="admin-modal-save-btn">Save Administrator</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="js/api.js"></script>
+  <script src="js/navbar.js"></script>
+  <script>
+    requireRole('Super Admin');
+
+    let admins = [
+      {
+        user_id: 2,
+        name: 'Default Admin',
+        email: 'admin@market.com',
+        mobile: '9876543210',
+        permissions: ['manage_categories', 'manage_users', 'manage_products', 'view_reports'],
+        status: 'Active'
+      },
+      {
+        user_id: 3,
+        name: 'Operations Manager',
+        email: 'ops@market.com',
+        mobile: '9845112233',
+        permissions: ['manage_categories', 'manage_users'],
+        status: 'Active'
+      },
+      {
+        user_id: 4,
+        name: 'Catalog Moderator',
+        email: 'catalog@market.com',
+        mobile: '9811998877',
+        permissions: ['manage_categories', 'manage_products'],
+        status: 'Inactive'
+      }
+    ];
+
+    const tbody = document.getElementById('admins-table-body');
+    const searchInput = document.getElementById('admin-search-input');
+    const statusFilter = document.getElementById('admin-status-filter');
+    const modal = document.getElementById('admin-modal');
+    const form = document.getElementById('admin-form');
+
+    function renderAdmins() {
+      const q = searchInput.value.toLowerCase().trim();
+      const status = statusFilter.value;
+
+      const filtered = admins.filter(a => {
+        const matchesQuery = a.name.toLowerCase().includes(q) || a.email.toLowerCase().includes(q);
+        const matchesStatus = status === 'ALL' || a.status === status;
+        return matchesQuery && matchesStatus;
+      });
+
+      document.getElementById('admin-count').textContent = filtered.length;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-muted">No administrators found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(a => `
+        <tr>
+          <td><span class="font-mono text-muted text-sm">#${a.user_id}</span></td>
+          <td>
+            <div class="font-bold">${escapeHtml(a.name)}</div>
+            <div class="text-xs text-muted">Administrator Role</div>
+          </td>
+          <td>
+            <div>${escapeHtml(a.email)}</div>
+            <div class="text-muted text-sm">${escapeHtml(a.mobile || '—')}</div>
+          </td>
+          <td>
+            <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+              ${a.permissions.map(p => `<span class="badge badge-secondary" style="font-size: 0.65rem;">${p}</span>`).join('')}
+            </div>
+          </td>
+          <td>
+            <span class="badge ${a.status === 'Active' ? 'badge-success' : 'badge-danger'}">
+              ${a.status}
+            </span>
+          </td>
+          <td style="text-align: right;">
+            <div class="action-btn-group">
+              <button class="btn btn-outline btn-sm" onclick="editPermissions(${a.user_id})">Permissions</button>
+              ${a.status === 'Active'
+                ? `<button class="btn btn-danger btn-sm" onclick="toggleAdminStatus(${a.user_id}, 'Inactive')">Deactivate</button>`
+                : `<button class="btn btn-secondary btn-sm" onclick="toggleAdminStatus(${a.user_id}, 'Active')">Activate</button>`
+              }
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    document.getElementById('open-add-admin-btn').addEventListener('click', () => {
+      form.reset();
+      document.getElementById('admin-id-field').value = '';
+      document.getElementById('admin-modal-title').textContent = 'Create Administrator Account';
+      document.getElementById('password-group').style.display = 'block';
+      modal.classList.add('is-active');
+    });
+
+    const closeModal = () => modal.classList.remove('is-active');
+    document.getElementById('admin-modal-close-btn').addEventListener('click', closeModal);
+    document.getElementById('admin-modal-cancel-btn').addEventListener('click', closeModal);
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const id = document.getElementById('admin-id-field').value;
+      const name = document.getElementById('admin-name-field').value.trim();
+      const email = document.getElementById('admin-email-field').value.trim();
+      const checkboxes = document.querySelectorAll('input[name="permissions"]:checked');
+      const permissions = Array.from(checkboxes).map(cb => cb.value);
+
+      if (id) {
+        const admin = admins.find(a => a.user_id == id);
+        if (admin) {
+          admin.name = name;
+          admin.email = email;
+          admin.permissions = permissions;
+        }
+        showToast(`Administrator #${id} permissions updated!`, 'success');
+      } else {
+        const newId = admins.length ? Math.max(...admins.map(a => a.user_id)) + 1 : 1;
+        admins.push({
+          user_id: newId,
+          name,
+          email,
+          mobile: '9800000000',
+          permissions,
+          status: 'Active'
+        });
+        showToast(`Administrator "${name}" created successfully!`, 'success');
+      }
+
+      closeModal();
+      renderAdmins();
+    });
+
+    window.editPermissions = function(id) {
+      const a = admins.find(adm => adm.user_id === id);
+      if (!a) return;
+      document.getElementById('admin-id-field').value = a.user_id;
+      document.getElementById('admin-name-field').value = a.name;
+      document.getElementById('admin-email-field').value = a.email;
+      document.getElementById('password-group').style.display = 'none';
+      document.getElementById('admin-modal-title').textContent = `Edit Admin #${a.user_id} Permissions`;
+
+      document.querySelectorAll('input[name="permissions"]').forEach(cb => {
+        cb.checked = a.permissions.includes(cb.value);
+      });
+
+      modal.classList.add('is-active');
+    };
+
+    window.toggleAdminStatus = function(id, newStatus) {
+      const a = admins.find(adm => adm.user_id === id);
+      if (!a) return;
+      a.status = newStatus;
+      showToast(`Admin #${id} is now ${newStatus}`, newStatus === 'Active' ? 'success' : 'warning');
+      renderAdmins();
+    };
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    searchInput.addEventListener('input', renderAdmins);
+    statusFilter.addEventListener('change', renderAdmins);
+    renderAdmins();
+  </script>
+</body>
+</html>
