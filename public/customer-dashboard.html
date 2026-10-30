@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Customer Dashboard - Track orders, metrics and shopping activities on MarketHub.">
+  <title>Customer Dashboard - MarketHub</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .stat-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: var(--space-6);
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      box-shadow: var(--shadow-sm);
+      transition: all var(--transition-normal);
+    }
+    .stat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--neutral-300);
+    }
+    .stat-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      flex-shrink: 0;
+    }
+    .stat-value {
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: var(--neutral-900);
+      line-height: 1.1;
+      font-family: var(--font-heading);
+    }
+    .stat-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-top: 2px;
+    }
+    .shortcut-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: var(--space-5);
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      transition: all var(--transition-fast);
+    }
+    .shortcut-card:hover {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      transform: translateX(4px);
+    }
+    .shortcut-icon {
+      font-size: 1.6rem;
+    }
+    .shortcut-title {
+      font-weight: 700;
+      color: var(--neutral-900);
+      margin-bottom: 2px;
+    }
+    .shortcut-desc {
+      font-size: 0.82rem;
+      color: var(--neutral-600);
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Dynamic Shared Navbar -->
+  <div id="navbar"></div>
+
+  <main class="py-8">
+    <div class="container">
+
+      <!-- Welcome Banner -->
+      <div class="card mb-8" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); color: white; border: none;">
+        <div class="card-body py-8 flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <div class="badge" style="background: rgba(255,255,255,0.15); color: #e0e7ff; margin-bottom: var(--space-3);">
+              ✨ Customer Portal (P2 Domain)
+            </div>
+            <h1 style="color: white; font-size: 2rem; margin-bottom: var(--space-2);">
+              Welcome back, <span id="customer-name-display">Shopper</span>!
+            </h1>
+            <p style="color: #cbd5e1; max-width: 560px; margin-bottom: 0;">
+              Manage your shopping cart, monitor active order shipments, and review your purchasing history.
+            </p>
+          </div>
+          <div class="flex gap-3">
+            <a href="cart.html" class="btn btn-primary">
+              🛒 Go to Cart
+            </a>
+            <a href="products.html" class="btn btn-outline" style="color: white; border-color: rgba(255,255,255,0.4);">
+              Explore Store
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Grid -->
+      <div class="grid grid-cols-4 gap-6 mb-8">
+        <div class="stat-card">
+          <div class="stat-icon" style="background: #eef2ff; color: var(--primary);">
+            📦
+          </div>
+          <div>
+            <div class="stat-value" id="stat-total-orders">3</div>
+            <div class="stat-label">Total Orders</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon" style="background: #fffbeb; color: var(--warning);">
+            ⏳
+          </div>
+          <div>
+            <div class="stat-value" id="stat-pending-orders">2</div>
+            <div class="stat-label">Active / In-Transit</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon" style="background: #ecfdf5; color: var(--success);">
+            ✅
+          </div>
+          <div>
+            <div class="stat-value" id="stat-delivered-orders">1</div>
+            <div class="stat-label">Delivered Orders</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon" style="background: #f0fdf4; color: #15803d;">
+            💳
+          </div>
+          <div>
+            <div class="stat-value" id="stat-total-spent">$277.99</div>
+            <div class="stat-label">Total Purchases</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2-Column Section: Recent Orders & Quick Shortcuts -->
+      <div class="grid grid-cols-3 gap-8 items-start">
+        <!-- Recent Orders (2 Columns wide) -->
+        <div style="grid-column: span 2;">
+          <div class="card">
+            <div class="card-header flex justify-between items-center">
+              <h3 style="font-size: 1.15rem; margin-bottom: 0;">Recent Purchase Orders</h3>
+              <a href="my-orders.html" class="btn btn-secondary btn-sm">View All Orders &rarr;</a>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Order ID</th>
+                      <th>Date</th>
+                      <th>Items</th>
+                      <th>Total</th>
+                      <th>Status</th>
+                      <th class="text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashboard-recent-orders">
+                    <tr>
+                      <td><strong>#ORD-1001</strong></td>
+                      <td class="text-muted">Oct 30, 2026</td>
+                      <td>Pro Wireless Headphones (1)</td>
+                      <td class="font-semibold">$149.99</td>
+                      <td><span class="badge badge-primary">Processing</span></td>
+                      <td class="text-right">
+                        <a href="my-orders.html" class="btn btn-secondary btn-sm">Track</a>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>#ORD-1002</strong></td>
+                      <td class="text-muted">Oct 29, 2026</td>
+                      <td>Mechanical Keyboard (1)</td>
+                      <td class="font-semibold">$89.50</td>
+                      <td><span class="badge badge-warning">Pending</span></td>
+                      <td class="text-right">
+                        <a href="my-orders.html" class="btn btn-secondary btn-sm">Track</a>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>#ORD-998</strong></td>
+                      <td class="text-muted">Oct 24, 2026</td>
+                      <td>Clean Code Handbook (1)</td>
+                      <td class="font-semibold">$38.50</td>
+                      <td><span class="badge badge-success">Delivered</span></td>
+                      <td class="text-right">
+                        <a href="my-orders.html" class="btn btn-secondary btn-sm">Details</a>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shortcuts Column -->
+        <div class="flex flex-col gap-4">
+          <div class="card">
+            <div class="card-header">
+              <h3 style="font-size: 1.1rem; margin-bottom: 0;">Customer Shortcuts</h3>
+            </div>
+            <div class="card-body flex flex-col gap-3">
+              <a href="cart.html" class="shortcut-card">
+                <div class="shortcut-icon">🛒</div>
+                <div>
+                  <div class="shortcut-title">Active Shopping Cart</div>
+                  <p class="shortcut-desc">Inspect items and proceed to checkout</p>
+                </div>
+              </a>
+
+              <a href="my-orders.html" class="shortcut-card">
+                <div class="shortcut-icon">📦</div>
+                <div>
+                  <div class="shortcut-title">Order Status & Tracking</div>
+                  <p class="shortcut-desc">Track progress or cancel eligible orders</p>
+                </div>
+              </a>
+
+              <a href="products.html" class="shortcut-card">
+                <div class="shortcut-icon">🔍</div>
+                <div>
+                  <div class="shortcut-title">Browse Marketplace</div>
+                  <p class="shortcut-desc">Discover new products across 6 categories</p>
+                </div>
+              </a>
+
+              <a href="profile.html" class="shortcut-card">
+                <div class="shortcut-icon">👤</div>
+                <div>
+                  <div class="shortcut-title">Addresses & Profile</div>
+                  <p class="shortcut-desc">Manage saved shipping addresses and data</p>
+                </div>
+              </a>
+            </div>
+          </div>
+
+          <!-- Academic Info Card -->
+          <div class="card" style="background: var(--neutral-50); border: 1px dashed var(--border-subtle);">
+            <div class="card-body">
+              <strong style="font-size: 0.9rem; color: var(--neutral-900);">📌 Architecture Note</strong>
+              <p style="font-size: 0.82rem; color: var(--neutral-600); margin-top: 4px; margin-bottom: 0;">
+                All statistics are customer-scoped. When authenticated via JWT, queries strictly filter by <code>customer_id = req.user.user_id</code> to guarantee multi-tenant data isolation.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="toast-container"></div>
+  <script src="js/api.js"></script>
+  <script src="js/navbar.js"></script>
+
+  <script>
+    // Route guard: require Customer role
+    const currentUser = typeof requireRole === 'function' ? requireRole('Customer') : null;
+
+    if (currentUser) {
+      const nameEl = document.getElementById('customer-name-display');
+      if (nameEl && currentUser.name) {
+        nameEl.textContent = currentUser.name.split(' ')[0];
+      }
+    }
+  </script>
+</body>
+</html>
