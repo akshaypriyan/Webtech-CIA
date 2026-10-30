@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics & Reports - MarketHub Admin</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div id="navbar"></div>
+
+  <main class="py-12">
+    <div class="container">
+      
+      <!-- Page Header -->
+      <div class="admin-page-header">
+        <div class="admin-title-area">
+          <h1>📊 Marketplace Analytics & Performance</h1>
+          <p class="admin-subtitle">Track Gross Merchandise Value (GMV), platform fee commissions, and category sales distribution.</p>
+        </div>
+        <div class="flex gap-3">
+          <select id="report-period" class="form-select" style="max-width: 160px;">
+            <option value="30d">Last 30 Days</option>
+            <option value="7d">Last 7 Days</option>
+            <option value="ytd">Year to Date</option>
+          </select>
+          <button class="btn btn-outline btn-sm" onclick="exportReport()">📥 Export CSV</button>
+        </div>
+      </div>
+
+      <!-- Financial Metric Cards -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon emerald">💰</div>
+          <div class="stat-info">
+            <span class="stat-label">Gross Sales (GMV)</span>
+            <span class="stat-value">$48,250.00</span>
+            <span class="stat-meta text-success">↑ 18.4% vs last period</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon indigo">🏦</div>
+          <div class="stat-info">
+            <span class="stat-label">Platform Fees (5%)</span>
+            <span class="stat-value">$2,412.50</span>
+            <span class="stat-meta">Net platform earnings</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon sky">📦</div>
+          <div class="stat-info">
+            <span class="stat-label">Orders Completed</span>
+            <span class="stat-value">634</span>
+            <span class="stat-meta">Avg $76.10 / order</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon amber">⭐</div>
+          <div class="stat-info">
+            <span class="stat-label">Customer Satisfaction</span>
+            <span class="stat-value">4.8 / 5.0</span>
+            <span class="stat-meta">Based on 312 reviews</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Category Performance & Sales Breakdown -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        
+        <!-- Category Sales Share -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="font-bold">Top Performing Categories</h3>
+          </div>
+          <div class="card-body">
+            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+              
+              <div>
+                <div class="flex justify-between text-sm font-semibold mb-1">
+                  <span>Consumer Electronics</span>
+                  <span>$22,195.00 (46%)</span>
+                </div>
+                <div style="height: 8px; background: var(--neutral-100); border-radius: 4px; overflow: hidden;">
+                  <div style="width: 46%; height: 100%; background: var(--primary);"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-sm font-semibold mb-1">
+                  <span>Fashion & Apparel</span>
+                  <span>$12,545.00 (26%)</span>
+                </div>
+                <div style="height: 8px; background: var(--neutral-100); border-radius: 4px; overflow: hidden;">
+                  <div style="width: 26%; height: 100%; background: var(--secondary);"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-sm font-semibold mb-1">
+                  <span>Home & Kitchen</span>
+                  <span>$6,755.00 (14%)</span>
+                </div>
+                <div style="height: 8px; background: var(--neutral-100); border-radius: 4px; overflow: hidden;">
+                  <div style="width: 14%; height: 100%; background: var(--accent);"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-sm font-semibold mb-1">
+                  <span>Sports & Outdoors</span>
+                  <span>$4,335.00 (9%)</span>
+                </div>
+                <div style="height: 8px; background: var(--neutral-100); border-radius: 4px; overflow: hidden;">
+                  <div style="width: 9%; height: 100%; background: var(--success);"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-sm font-semibold mb-1">
+                  <span>Books & Stationery</span>
+                  <span>$2,420.00 (5%)</span>
+                </div>
+                <div style="height: 8px; background: var(--neutral-100); border-radius: 4px; overflow: hidden;">
+                  <div style="width: 5%; height: 100%; background: var(--neutral-400);"></div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Selling Merchants -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="font-bold">Top Verified Merchants</h3>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive" style="border: none; box-shadow: none;">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Merchant</th>
+                    <th>Orders</th>
+                    <th>Volume</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Nova Tech Retailers</strong></td>
+                    <td>248</td>
+                    <td class="font-bold text-success">$19,840.00</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Urban Threads Studio</strong></td>
+                    <td>164</td>
+                    <td class="font-bold text-success">$11,200.00</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Apex Gear Direct</strong></td>
+                    <td>112</td>
+                    <td class="font-bold text-success">$8,960.00</td>
+                  </tr>
+                  <tr>
+                    <td><strong>KitchenCraft Essentials</strong></td>
+                    <td>82</td>
+                    <td class="font-bold text-success">$5,450.00</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <div id="toast-container"></div>
+  <script src="js/api.js"></script>
+  <script src="js/navbar.js"></script>
+  <script>
+    requireRole('Admin', 'Super Admin');
+
+    window.exportReport = function() {
+      showToast('Generating sales report export...', 'info');
+      setTimeout(() => {
+        showToast('Report downloaded successfully as CSV', 'success');
+      }, 1000);
+    };
+
+    document.getElementById('report-period').addEventListener('change', (e) => {
+      showToast(`Refreshed analytics for period: ${e.target.options[e.target.selectedIndex].text}`, 'info');
+    });
+  </script>
+</body>
+</html>

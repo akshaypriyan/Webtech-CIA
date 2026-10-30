@@ -5,30 +5,205 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - MarketHub</title>
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/admin.css">
 </head>
 <body>
   <div id="navbar"></div>
 
   <main class="py-12">
     <div class="container">
-      <div class="card">
-        <div class="card-header flex justify-between items-center">
-          <h3>🛡️ Administrator Console</h3>
-          <span class="badge badge-warning">Member 4 Workspace</span>
+      
+      <!-- Page Header -->
+      <div class="admin-page-header">
+        <div class="admin-title-area">
+          <h1>🛡️ Administrator Operations Console</h1>
+          <p class="admin-subtitle">Welcome back, <span id="admin-name" class="font-bold">Admin</span>. Overview of platform metrics, moderation, and taxonomy.</p>
         </div>
-        <div class="card-body py-12 text-center">
-          <div style="font-size: 3rem; margin-bottom: 1rem;">⚙️</div>
-          <h2 id="admin-greeting">Welcome, Admin!</h2>
-          <p class="text-muted" style="max-width: 500px; margin: 0 auto 1.5rem;">
-            You have authenticated as an Administrator. This slice is owned by 
-            Member 4 (User Moderation, Categories, and Governance).
-          </p>
-          <div class="flex justify-center gap-4">
-            <a href="index.html" class="btn btn-secondary">Storefront</a>
-            <button onclick="logout()" class="btn btn-danger">Log Out</button>
+        <div class="flex gap-3">
+          <a href="manage-categories.html" class="btn btn-primary btn-sm">➕ Add Category</a>
+          <a href="admin-reports.html" class="btn btn-secondary btn-sm">📊 View Reports</a>
+        </div>
+      </div>
+
+      <!-- KPI Metrics Grid -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon indigo">👥</div>
+          <div class="stat-info">
+            <span class="stat-label">Total Customers</span>
+            <span class="stat-value">1,482</span>
+            <span class="stat-meta text-success">↑ 12% this month</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon emerald">🏪</div>
+          <div class="stat-info">
+            <span class="stat-label">Active Sellers</span>
+            <span class="stat-value">68</span>
+            <span class="stat-meta text-warning">4 pending review</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon amber">🏷️</div>
+          <div class="stat-info">
+            <span class="stat-label">Product Categories</span>
+            <span class="stat-value" id="kpi-categories-count">6</span>
+            <span class="stat-meta">Active catalog taxonomy</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon rose">⚠️</div>
+          <div class="stat-info">
+            <span class="stat-label">Flagged Items</span>
+            <span class="stat-value">3</span>
+            <span class="stat-meta text-danger">Requires moderation</span>
           </div>
         </div>
       </div>
+
+      <!-- Navigation & Action Modules -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        
+        <div class="card card-hover">
+          <div class="card-body">
+            <div class="flex items-center gap-3 mb-3">
+              <span style="font-size: 1.75rem;">👥</span>
+              <div>
+                <h3 class="font-bold" style="margin: 0; font-size: 1.15rem;">Customer Accounts</h3>
+                <span class="text-muted text-sm">Review registered buyers</span>
+              </div>
+            </div>
+            <p class="text-muted text-sm mb-4">Search, verify, inspect purchase activity, and toggle customer account access.</p>
+            <a href="manage-customers.html" class="btn btn-outline btn-block btn-sm">Manage Customers &rarr;</a>
+          </div>
+        </div>
+
+        <div class="card card-hover">
+          <div class="card-body">
+            <div class="flex items-center gap-3 mb-3">
+              <span style="font-size: 1.75rem;">🏪</span>
+              <div>
+                <h3 class="font-bold" style="margin: 0; font-size: 1.15rem;">Seller Onboarding</h3>
+                <span class="text-muted text-sm">Governance & approvals</span>
+              </div>
+            </div>
+            <p class="text-muted text-sm mb-4">Review merchant applications, approve new store owners, or suspend inactive accounts.</p>
+            <a href="manage-sellers.html" class="btn btn-outline btn-block btn-sm">Manage Sellers &rarr;</a>
+          </div>
+        </div>
+
+        <div class="card card-hover">
+          <div class="card-body">
+            <div class="flex items-center gap-3 mb-3">
+              <span style="font-size: 1.75rem;">🏷️</span>
+              <div>
+                <h3 class="font-bold" style="margin: 0; font-size: 1.15rem;">Category Taxonomy</h3>
+                <span class="text-muted text-sm">Storefront classification</span>
+              </div>
+            </div>
+            <p class="text-muted text-sm mb-4">Create, update, and manage product catalog categories used by sellers and customers.</p>
+            <a href="manage-categories.html" class="btn btn-outline btn-block btn-sm">Manage Categories &rarr;</a>
+          </div>
+        </div>
+
+        <div class="card card-hover">
+          <div class="card-body">
+            <div class="flex items-center gap-3 mb-3">
+              <span style="font-size: 1.75rem;">📦</span>
+              <div>
+                <h3 class="font-bold" style="margin: 0; font-size: 1.15rem;">Product Moderation</h3>
+                <span class="text-muted text-sm">Catalog quality control</span>
+              </div>
+            </div>
+            <p class="text-muted text-sm mb-4">Inspect live listings, check compliance with platform standards, and take down violations.</p>
+            <a href="manage-products.html" class="btn btn-outline btn-block btn-sm">Moderate Products &rarr;</a>
+          </div>
+        </div>
+
+        <div class="card card-hover">
+          <div class="card-body">
+            <div class="flex items-center gap-3 mb-3">
+              <span style="font-size: 1.75rem;">📊</span>
+              <div>
+                <h3 class="font-bold" style="margin: 0; font-size: 1.15rem;">Sales & Analytics</h3>
+                <span class="text-muted text-sm">Business performance</span>
+              </div>
+            </div>
+            <p class="text-muted text-sm mb-4">Monitor gross sales volume, commission revenue, and top-performing categories.</p>
+            <a href="admin-reports.html" class="btn btn-outline btn-block btn-sm">View Reports &rarr;</a>
+          </div>
+        </div>
+
+        <div class="card card-hover">
+          <div class="card-body">
+            <div class="flex items-center gap-3 mb-3">
+              <span style="font-size: 1.75rem;">👑</span>
+              <div>
+                <h3 class="font-bold" style="margin: 0; font-size: 1.15rem;">Super Admin Suite</h3>
+                <span class="text-muted text-sm">Elevated privileges</span>
+              </div>
+            </div>
+            <p class="text-muted text-sm mb-4">Access audit trails, administrator permissions, and system-wide security settings.</p>
+            <a href="superadmin-dashboard.html" class="btn btn-secondary btn-block btn-sm">Super Admin Portal &rarr;</a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Recent System Events Preview -->
+      <div class="card">
+        <div class="card-header flex justify-between items-center">
+          <h3 class="font-bold">Recent Governance & Audit Activity</h3>
+          <a href="system-logs.html" class="text-sm font-semibold text-primary">View Full Logs &rarr;</a>
+        </div>
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Description</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="activity-tbody">
+              <tr>
+                <td class="text-muted text-sm">Today, 20:45</td>
+                <td><span class="font-semibold">admin@market.com</span></td>
+                <td><span class="code-badge">CATEGORY_CREATE</span></td>
+                <td>Created category "Sports & Fitness"</td>
+                <td><span class="badge badge-success">Success</span></td>
+              </tr>
+              <tr>
+                <td class="text-muted text-sm">Today, 19:12</td>
+                <td><span class="font-semibold">admin@market.com</span></td>
+                <td><span class="code-badge">SELLER_APPROVE</span></td>
+                <td>Approved seller application for "TechZone Store"</td>
+                <td><span class="badge badge-success">Approved</span></td>
+              </tr>
+              <tr>
+                <td class="text-muted text-sm">Today, 17:30</td>
+                <td><span class="font-semibold">superadmin@market.com</span></td>
+                <td><span class="code-badge">SETTINGS_UPDATE</span></td>
+                <td>Updated marketplace transaction fee to 5.0%</td>
+                <td><span class="badge badge-success">Success</span></td>
+              </tr>
+              <tr>
+                <td class="text-muted text-sm">Yesterday, 22:10</td>
+                <td><span class="font-semibold">admin@market.com</span></td>
+                <td><span class="code-badge">PRODUCT_FLAG</span></td>
+                <td>Flagged product #104 for counterfeit trademark review</td>
+                <td><span class="badge badge-warning">Flagged</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
   </main>
 
@@ -36,10 +211,23 @@
   <script src="js/api.js"></script>
   <script src="js/navbar.js"></script>
   <script>
+    // Route protection: Only Admin and Super Admin
     const user = requireRole('Admin', 'Super Admin');
     if (user) {
-      document.getElementById('admin-greeting').textContent = `Welcome back, ${user.name}!`;
+      document.getElementById('admin-name').textContent = user.name || 'Administrator';
     }
+
+    // Attempt to load dynamic category count from Categories API
+    (async function initDashboard() {
+      try {
+        const res = await apiFetch('/categories');
+        if (res && res.data && Array.isArray(res.data)) {
+          document.getElementById('kpi-categories-count').textContent = res.data.length;
+        }
+      } catch (e) {
+        // Fallback to static mock counter
+      }
+    })();
   </script>
 </body>
 </html>

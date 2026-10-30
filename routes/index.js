@@ -42,11 +42,11 @@ router.use('/auth', authRoutes);
 // router.use('/seller', sellerRoutes);
 
 // Person 4: Governance, Categories & Administration
+const categoryRoutes = require('./category.routes');
+router.use('/categories', categoryRoutes);
 // const adminRoutes = require('./admin.routes');
 // const superadminRoutes = require('./superadmin.routes');
-// const categoryRoutes = require('./category.routes');
 // router.use('/admin', adminRoutes);
 // router.use('/superadmin', superadminRoutes);
-// router.use('/categories', categoryRoutes);
 
 module.exports = router;
