@@ -227,42 +227,54 @@
 
   <script>
     /**
-     * Day 1: Interactive Static Prototype with Mock Cart Data
-     * (Connected to live MySQL API in Day 2)
+     * Day 2, Step 2.1: Live Database-Backed Cart Retrieval
      */
 
-    // Sample mock cart data modeled after database schema (products & cart_items)
-    let cartItems = [
-      {
-        cart_item_id: 1,
-        product_id: 1,
-        product_name: "Pro Wireless Noise-Cancelling Headphones",
-        seller_name: "AudioTech Official",
-        price: 149.99,
-        quantity: 1,
-        stock_quantity: 15,
-        image_emoji: "🎧"
-      },
-      {
-        cart_item_id: 2,
-        product_id: 2,
-        product_name: "Custom Mechanical RGB Gaming Keyboard",
-        seller_name: "KeyPro Studios",
-        price: 89.50,
-        quantity: 1,
-        stock_quantity: 8,
-        image_emoji: "⌨️"
-      }
-    ];
+    // Route guard: restrict page to Customer role
+    const currentUser = typeof requireRole === 'function' ? requireRole('Customer') : null;
 
-    function renderCart() {
+    let cartData = null;
+
+    async function loadCart() {
+      const container = document.getElementById('cart-items-container');
+      const cartContent = document.getElementById('cart-content');
+      const emptyState = document.getElementById('empty-cart-state');
+      const clearBtn = document.getElementById('clear-cart-btn');
+
+      try {
+        container.innerHTML = `
+          <div class="text-center py-8 text-muted">
+            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">⏳</div>
+            Loading your shopping cart...
+          </div>
+        `;
+
+        // Fetch live cart data from Express API
+        const response = await apiFetch('/cart');
+        cartData = response.data;
+
+        renderCart(cartData);
+      } catch (err) {
+        console.error('Failed to load cart:', err);
+        container.innerHTML = `
+          <div class="alert alert-danger">
+            <span>Failed to load cart: ${escapeHtml(err.message || 'Server error')}</span>
+          </div>
+        `;
+        showToast(err.message || 'Error connecting to cart service', 'error');
+      }
+    }
+
+    function renderCart(data) {
       const container = document.getElementById('cart-items-container');
       const cartContent = document.getElementById('cart-content');
       const emptyState = document.getElementById('empty-cart-state');
       const itemCountSpan = document.getElementById('cart-items-qty');
       const clearBtn = document.getElementById('clear-cart-btn');
 
-      if (!cartItems || cartItems.length === 0) {
+      const items = (data && data.items) ? data.items : [];
+
+      if (items.length === 0) {
         cartContent.style.display = 'none';
         emptyState.style.display = 'block';
         if (clearBtn) clearBtn.style.display = 'none';
@@ -273,84 +285,74 @@
       emptyState.style.display = 'none';
       if (clearBtn) clearBtn.style.display = 'inline-flex';
 
-      let totalQty = 0;
-      let subtotal = 0;
-
-      container.innerHTML = cartItems.map(item => {
-        totalQty += item.quantity;
-        const lineTotal = item.price * item.quantity;
-        subtotal += lineTotal;
+      container.innerHTML = items.map(item => {
+        const lineTotal = Number(item.current_price) * item.quantity;
+        const productEmoji = getProductEmoji(item.product_name);
 
         return `
           <div class="cart-item-row" id="item-row-${item.cart_item_id}">
             <div class="cart-item-img">
-              ${item.image_emoji}
+              ${item.image ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.product_name)}" style="width:100%; height:100%; object-fit:cover; border-radius:inherit;">` : productEmoji}
             </div>
             <div class="cart-item-details">
-              <div class="cart-item-title">${escapeHtml(item.product_name)}</div>
-              <div class="cart-item-meta">Sold by: <span class="font-semibold">${escapeHtml(item.seller_name)}</span> &bull; In Stock: ${item.stock_quantity}</div>
+              <div class="cart-item-title">
+                <a href="product-details.html?id=${item.product_id}" style="color: inherit;">
+                  ${escapeHtml(item.product_name)}
+                </a>
+              </div>
+              <div class="cart-item-meta">
+                Sold by: <span class="font-semibold">${escapeHtml(item.seller_name || 'Verified Seller')}</span> &bull; 
+                In Stock: <span class="${item.stock_quantity > 0 ? '' : 'text-danger'}">${item.stock_quantity}</span>
+              </div>
               <div class="text-muted" style="font-size: 0.88rem; margin-top: 4px;">
-                Unit Price: $${Number(item.price).toFixed(2)}
+                Unit Price: $${Number(item.current_price).toFixed(2)}
               </div>
             </div>
             <div class="qty-control">
-              <button class="qty-btn" onclick="updateQty(${item.cart_item_id}, -1)" aria-label="Decrease quantity">&minus;</button>
+              <button class="qty-btn" onclick="handleQtyChange(${item.cart_item_id}, -1)" aria-label="Decrease quantity">&minus;</button>
               <input type="text" class="qty-input" value="${item.quantity}" readonly aria-label="Quantity">
-              <button class="qty-btn" onclick="updateQty(${item.cart_item_id}, 1)" aria-label="Increase quantity">&plus;</button>
+              <button class="qty-btn" onclick="handleQtyChange(${item.cart_item_id}, 1)" aria-label="Increase quantity">&plus;</button>
             </div>
             <div class="cart-item-price">
               $${lineTotal.toFixed(2)}
             </div>
-            <button class="remove-btn" onclick="removeItem(${item.cart_item_id})" title="Remove item" aria-label="Remove item">
+            <button class="remove-btn" onclick="handleRemoveItem(${item.cart_item_id})" title="Remove item" aria-label="Remove item">
               ✕
             </button>
           </div>
         `;
       }).join('');
 
-      itemCountSpan.textContent = totalQty;
-      const tax = subtotal * 0.05;
-      const total = subtotal + tax;
-
-      document.getElementById('summary-subtotal').textContent = `$${subtotal.toFixed(2)}`;
-      document.getElementById('summary-tax').textContent = `$${tax.toFixed(2)}`;
-      document.getElementById('summary-total').textContent = `$${total.toFixed(2)}`;
+      // Populate Server-Calculated Totals
+      itemCountSpan.textContent = data.total_items;
+      document.getElementById('summary-subtotal').textContent = `$${Number(data.subtotal).toFixed(2)}`;
+      document.getElementById('summary-tax').textContent = `$${Number(data.estimated_tax).toFixed(2)}`;
+      document.getElementById('summary-total').textContent = `$${Number(data.total_amount).toFixed(2)}`;
     }
 
-    function updateQty(cartItemId, delta) {
-      const item = cartItems.find(i => i.cart_item_id === cartItemId);
-      if (!item) return;
-
-      const newQty = item.quantity + delta;
-      if (newQty < 1) {
-        removeItem(cartItemId);
-        return;
-      }
-      if (newQty > item.stock_quantity) {
-        showToast(`Cannot add more. Only ${item.stock_quantity} units available in stock.`, 'warning');
-        return;
-      }
-
-      item.quantity = newQty;
-      renderCart();
-      showToast(`Updated "${item.product_name}" quantity to ${newQty}.`, 'info', 1500);
+    // Placeholder handlers for Step 2.2 operations
+    function handleQtyChange(cartItemId, delta) {
+      showToast('Quantity update will be connected in Step 2.2!', 'info');
     }
 
-    function removeItem(cartItemId) {
-      const item = cartItems.find(i => i.cart_item_id === cartItemId);
-      cartItems = cartItems.filter(i => i.cart_item_id !== cartItemId);
-      renderCart();
-      if (item) {
-        showToast(`Removed "${item.product_name}" from cart.`, 'info');
-      }
+    function handleRemoveItem(cartItemId) {
+      showToast('Item removal will be connected in Step 2.2!', 'info');
     }
 
     function clearCart() {
-      if (confirm('Are you sure you want to clear all items in your cart?')) {
-        cartItems = [];
-        renderCart();
-        showToast('Your shopping cart has been cleared.', 'info');
-      }
+      showToast('Clear cart will be connected in Step 2.2!', 'info');
+    }
+
+    function getProductEmoji(name) {
+      const lower = (name || '').toLowerCase();
+      if (lower.includes('headphone') || lower.includes('audio')) return '🎧';
+      if (lower.includes('keyboard') || lower.includes('mouse')) return '⌨️';
+      if (lower.includes('jacket') || lower.includes('trouser') || lower.includes('shoes')) return '👕';
+      if (lower.includes('fryer') || lower.includes('bottle')) return '🍳';
+      if (lower.includes('book') || lower.includes('programmer') || lower.includes('code')) return '📚';
+      if (lower.includes('serum') || lower.includes('oil') || lower.includes('beauty')) return '🧴';
+      if (lower.includes('dumbbell') || lower.includes('sport')) return '🏋️';
+      return '📦';
     }
 
     function escapeHtml(str) {
@@ -359,9 +361,11 @@
       }[m]));
     }
 
-    // Initialize on load
+    // Load live cart on DOM ready
     document.addEventListener('DOMContentLoaded', () => {
-      renderCart();
+      if (currentUser) {
+        loadCart();
+      }
     });
   </script>
 </body>

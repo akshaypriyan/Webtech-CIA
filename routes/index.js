@@ -32,9 +32,9 @@ router.use('/products', productRoutes);
 // router.use('/reviews', reviewRoutes);
 
 // Person 2: Shopping Cart & Orders
-// const cartRoutes = require('./cart.routes');
+const cartRoutes = require('./cart.routes');
 // const orderRoutes = require('./order.routes');
-// router.use('/cart', cartRoutes);
+router.use('/cart', cartRoutes);
 // router.use('/orders', orderRoutes);
 
 // Person 3: Seller Portal & Fulfillment
