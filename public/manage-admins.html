@@ -120,32 +120,7 @@
   <script>
     requireRole('Super Admin');
 
-    let admins = [
-      {
-        user_id: 2,
-        name: 'Default Admin',
-        email: 'admin@market.com',
-        mobile: '9876543210',
-        permissions: ['manage_categories', 'manage_users', 'manage_products', 'view_reports'],
-        status: 'Active'
-      },
-      {
-        user_id: 3,
-        name: 'Operations Manager',
-        email: 'ops@market.com',
-        mobile: '9845112233',
-        permissions: ['manage_categories', 'manage_users'],
-        status: 'Active'
-      },
-      {
-        user_id: 4,
-        name: 'Catalog Moderator',
-        email: 'catalog@market.com',
-        mobile: '9811998877',
-        permissions: ['manage_categories', 'manage_products'],
-        status: 'Inactive'
-      }
-    ];
+    let admins = [];
 
     const tbody = document.getElementById('admins-table-body');
     const searchInput = document.getElementById('admin-search-input');
@@ -153,12 +128,30 @@
     const modal = document.getElementById('admin-modal');
     const form = document.getElementById('admin-form');
 
+    async function loadAdmins() {
+      try {
+        const queryParams = new URLSearchParams();
+        if (statusFilter.value !== 'ALL') queryParams.append('status', statusFilter.value);
+        if (searchInput.value.trim()) queryParams.append('search', searchInput.value.trim());
+
+        const endpoint = `/superadmin/admins${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+        const res = await apiFetch(endpoint);
+        if (res && res.data) {
+          admins = res.data;
+        }
+      } catch (err) {
+        console.warn('API error, using cached admins:', err.message);
+      }
+      renderAdmins();
+    }
+
     function renderAdmins() {
       const q = searchInput.value.toLowerCase().trim();
       const status = statusFilter.value;
 
       const filtered = admins.filter(a => {
-        const matchesQuery = a.name.toLowerCase().includes(q) || a.email.toLowerCase().includes(q);
+        const matchesQuery = (a.name && a.name.toLowerCase().includes(q)) || 
+                             (a.email && a.email.toLowerCase().includes(q));
         const matchesStatus = status === 'ALL' || a.status === status;
         return matchesQuery && matchesStatus;
       });
@@ -175,7 +168,7 @@
           <td><span class="font-mono text-muted text-sm">#${a.user_id}</span></td>
           <td>
             <div class="font-bold">${escapeHtml(a.name)}</div>
-            <div class="text-xs text-muted">Administrator Role</div>
+            <div class="text-xs text-muted">Created ${a.created_at ? new Date(a.created_at).toLocaleDateString() : '—'}</div>
           </td>
           <td>
             <div>${escapeHtml(a.email)}</div>
@@ -183,7 +176,7 @@
           </td>
           <td>
             <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-              ${a.permissions.map(p => `<span class="badge badge-secondary" style="font-size: 0.65rem;">${p}</span>`).join('')}
+              ${(a.permissions || []).map(p => `<span class="badge badge-secondary" style="font-size: 0.65rem;">${escapeHtml(p)}</span>`).join('') || '<span class="text-muted text-xs">No permissions</span>'}
             </div>
           </td>
           <td>
@@ -195,9 +188,10 @@
             <div class="action-btn-group">
               <button class="btn btn-outline btn-sm" onclick="editPermissions(${a.user_id})">Permissions</button>
               ${a.status === 'Active'
-                ? `<button class="btn btn-danger btn-sm" onclick="toggleAdminStatus(${a.user_id}, 'Inactive')">Deactivate</button>`
+                ? `<button class="btn btn-danger btn-sm" onclick="toggleAdminStatus(${a.user_id}, 'Blocked')">Deactivate</button>`
                 : `<button class="btn btn-secondary btn-sm" onclick="toggleAdminStatus(${a.user_id}, 'Active')">Activate</button>`
               }
+              <button class="btn btn-outline btn-sm text-danger" onclick="deleteAdminHandler(${a.user_id}, '${escapeHtml(a.name)}')">&times;</button>
             </div>
           </td>
         </tr>
@@ -207,6 +201,8 @@
     document.getElementById('open-add-admin-btn').addEventListener('click', () => {
       form.reset();
       document.getElementById('admin-id-field').value = '';
+      document.getElementById('admin-name-field').readOnly = false;
+      document.getElementById('admin-email-field').readOnly = false;
       document.getElementById('admin-modal-title').textContent = 'Create Administrator Account';
       document.getElementById('password-group').style.display = 'block';
       modal.classList.add('is-active');
@@ -216,37 +212,36 @@
     document.getElementById('admin-modal-close-btn').addEventListener('click', closeModal);
     document.getElementById('admin-modal-cancel-btn').addEventListener('click', closeModal);
 
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const id = document.getElementById('admin-id-field').value;
       const name = document.getElementById('admin-name-field').value.trim();
       const email = document.getElementById('admin-email-field').value.trim();
+      const password = document.getElementById('admin-password-field').value;
       const checkboxes = document.querySelectorAll('input[name="permissions"]:checked');
       const permissions = Array.from(checkboxes).map(cb => cb.value);
 
-      if (id) {
-        const admin = admins.find(a => a.user_id == id);
-        if (admin) {
-          admin.name = name;
-          admin.email = email;
-          admin.permissions = permissions;
+      try {
+        if (id) {
+          // Update permissions API
+          await apiFetch(`/superadmin/admins/${id}/permissions`, {
+            method: 'PUT',
+            body: { permissions }
+          });
+          showToast(`Administrator #${id} permissions updated!`, 'success');
+        } else {
+          // Create Admin API
+          await apiFetch('/superadmin/admins', {
+            method: 'POST',
+            body: { name, email, password, permissions }
+          });
+          showToast(`Administrator "${name}" created successfully!`, 'success');
         }
-        showToast(`Administrator #${id} permissions updated!`, 'success');
-      } else {
-        const newId = admins.length ? Math.max(...admins.map(a => a.user_id)) + 1 : 1;
-        admins.push({
-          user_id: newId,
-          name,
-          email,
-          mobile: '9800000000',
-          permissions,
-          status: 'Active'
-        });
-        showToast(`Administrator "${name}" created successfully!`, 'success');
+        closeModal();
+        await loadAdmins();
+      } catch (err) {
+        showToast(err.message || 'Action failed', 'error');
       }
-
-      closeModal();
-      renderAdmins();
     });
 
     window.editPermissions = function(id) {
@@ -254,32 +249,54 @@
       if (!a) return;
       document.getElementById('admin-id-field').value = a.user_id;
       document.getElementById('admin-name-field').value = a.name;
+      document.getElementById('admin-name-field').readOnly = true;
       document.getElementById('admin-email-field').value = a.email;
+      document.getElementById('admin-email-field').readOnly = true;
       document.getElementById('password-group').style.display = 'none';
       document.getElementById('admin-modal-title').textContent = `Edit Admin #${a.user_id} Permissions`;
 
       document.querySelectorAll('input[name="permissions"]').forEach(cb => {
-        cb.checked = a.permissions.includes(cb.value);
+        cb.checked = (a.permissions || []).includes(cb.value);
       });
 
       modal.classList.add('is-active');
     };
 
-    window.toggleAdminStatus = function(id, newStatus) {
-      const a = admins.find(adm => adm.user_id === id);
-      if (!a) return;
-      a.status = newStatus;
-      showToast(`Admin #${id} is now ${newStatus}`, newStatus === 'Active' ? 'success' : 'warning');
-      renderAdmins();
+    window.toggleAdminStatus = async function(id, newStatus) {
+      try {
+        await apiFetch(`/superadmin/admins/${id}/status`, {
+          method: 'PUT',
+          body: { status: newStatus }
+        });
+        showToast(`Admin #${id} is now ${newStatus}`, newStatus === 'Active' ? 'success' : 'warning');
+        await loadAdmins();
+      } catch (err) {
+        showToast(err.message || 'Failed to update admin status', 'error');
+      }
+    };
+
+    window.deleteAdminHandler = async function(id, name) {
+      if (!confirm(`Are you sure you want to permanently delete administrator "${name}"?`)) return;
+      try {
+        await apiFetch(`/superadmin/admins/${id}`, { method: 'DELETE' });
+        showToast(`Administrator "${name}" deleted`, 'success');
+        await loadAdmins();
+      } catch (err) {
+        showToast(err.message || 'Failed to delete administrator', 'error');
+      }
     };
 
     function escapeHtml(str) {
       return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
-    searchInput.addEventListener('input', renderAdmins);
-    statusFilter.addEventListener('change', renderAdmins);
-    renderAdmins();
+    let searchDebounce;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(loadAdmins, 300);
+    });
+    statusFilter.addEventListener('change', loadAdmins);
+    loadAdmins();
   </script>
 </body>
 </html>

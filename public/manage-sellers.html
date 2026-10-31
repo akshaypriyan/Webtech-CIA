@@ -68,16 +68,29 @@
   <script>
     requireRole('Admin', 'Super Admin');
 
-    let sellers = [
-      { user_id: 201, name: 'Nova Tech Retailers', email: 'seller@market.com', mobile: '9845123456', products: 14, status: 'Active', applied: '2026-10-12' },
-      { user_id: 202, name: 'Urban Threads Studio', email: 'urban.threads@example.com', mobile: '9876599881', products: 8, status: 'Active', applied: '2026-10-16' },
-      { user_id: 203, name: 'EcoLiving Botanicals', email: 'contact@ecoliving.org', mobile: '9811223344', products: 0, status: 'Pending', applied: '2026-10-29' },
-      { user_id: 204, name: 'Apex Gear Direct', email: 'support@apexgear.net', mobile: '9744332211', products: 0, status: 'Pending', applied: '2026-10-30' }
-    ];
+    let sellers = [];
 
     let currentTab = 'ALL';
     const tbody = document.getElementById('sellers-table-body');
     const searchInput = document.getElementById('seller-search-input');
+
+    async function loadSellers() {
+      try {
+        const queryParams = new URLSearchParams();
+        if (currentTab !== 'ALL') queryParams.append('status', currentTab);
+        if (searchInput.value.trim()) queryParams.append('search', searchInput.value.trim());
+
+        const endpoint = `/admin/sellers${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+        const res = await apiFetch(endpoint);
+        if (res && res.data) {
+          sellers = res.data;
+        }
+      } catch (err) {
+        console.warn('API error, using cached state:', err.message);
+      }
+      updateTabCounts();
+      renderSellers();
+    }
 
     function updateTabCounts() {
       document.getElementById('tab-all-count').textContent = sellers.length;
@@ -89,7 +102,9 @@
       const q = searchInput.value.toLowerCase().trim();
 
       const filtered = sellers.filter(s => {
-        const matchesQuery = s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q) || s.mobile.includes(q);
+        const matchesQuery = (s.name && s.name.toLowerCase().includes(q)) || 
+                             (s.email && s.email.toLowerCase().includes(q)) || 
+                             (s.mobile && s.mobile.includes(q));
         const matchesTab = currentTab === 'ALL' || s.status === currentTab;
         return matchesQuery && matchesTab;
       });
@@ -106,13 +121,13 @@
           <td><span class="font-mono text-muted text-sm">#${s.user_id}</span></td>
           <td>
             <div class="font-bold">${escapeHtml(s.name)}</div>
-            <div class="text-muted text-sm">Applied ${s.applied}</div>
+            <div class="text-muted text-sm">Registered ${s.created_at ? new Date(s.created_at).toLocaleDateString() : '—'}</div>
           </td>
           <td>
             <div>${escapeHtml(s.email)}</div>
-            <div class="text-muted text-sm">${escapeHtml(s.mobile)}</div>
+            <div class="text-muted text-sm">${escapeHtml(s.mobile || '—')}</div>
           </td>
-          <td><span class="badge badge-secondary">${s.products} listings</span></td>
+          <td><span class="badge badge-secondary">${s.total_products || 0} listings</span></td>
           <td>
             <span class="badge ${s.status === 'Active' ? 'badge-success' : (s.status === 'Pending' ? 'badge-warning' : 'badge-danger')}">
               ${s.status}
@@ -136,13 +151,17 @@
       `).join('');
     }
 
-    window.setSellerStatus = function(id, newStatus) {
-      const seller = sellers.find(s => s.user_id === id);
-      if (!seller) return;
-      seller.status = newStatus;
-      showToast(`Merchant "${seller.name}" updated to status: ${newStatus}`, newStatus === 'Active' ? 'success' : 'info');
-      updateTabCounts();
-      renderSellers();
+    window.setSellerStatus = async function(id, newStatus) {
+      try {
+        await apiFetch(`/admin/sellers/${id}/status`, {
+          method: 'PUT',
+          body: { status: newStatus }
+        });
+        showToast(`Merchant #${id} updated to status: ${newStatus}`, newStatus === 'Active' ? 'success' : 'info');
+        await loadSellers();
+      } catch (err) {
+        showToast(err.message || 'Failed to update merchant status', 'error');
+      }
     };
 
     document.querySelectorAll('.admin-tab').forEach(tab => {
@@ -150,7 +169,7 @@
         document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
         currentTab = tab.dataset.tab;
-        renderSellers();
+        loadSellers();
       });
     });
 
@@ -158,9 +177,12 @@
       return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
-    searchInput.addEventListener('input', renderSellers);
-    updateTabCounts();
-    renderSellers();
+    let searchDebounce;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(loadSellers, 300);
+    });
+    loadSellers();
   </script>
 </body>
 </html>
