@@ -244,7 +244,7 @@
                 <div class="mt-4 pt-4" style="border-top: 1px solid var(--border-subtle);">
                   <div class="summary-line">
                     <span>Items Subtotal</span>
-                    <span class="font-semibold">$239.49</span>
+                    <span id="checkout-subtotal" class="font-semibold">$0.00</span>
                   </div>
                   <div class="summary-line">
                     <span>Shipping Fee</span>
@@ -252,11 +252,11 @@
                   </div>
                   <div class="summary-line">
                     <span>Estimated Tax (5%)</span>
-                    <span class="font-semibold">$11.97</span>
+                    <span id="checkout-tax" class="font-semibold">$0.00</span>
                   </div>
                   <div class="summary-total">
                     <span>Total Amount</span>
-                    <span style="color: var(--primary); font-size: 1.35rem;">$251.46</span>
+                    <span id="checkout-total" style="color: var(--primary); font-size: 1.35rem;">$0.00</span>
                   </div>
                 </div>
 
@@ -289,6 +289,78 @@
   <script>
     // Route guard for customer role
     const currentUser = typeof requireRole === 'function' ? requireRole('Customer') : null;
+
+    let checkoutCart = null;
+
+    // Load live cart data from Express API
+    async function loadCheckoutData() {
+      const itemsList = document.getElementById('checkout-items-list');
+      const subtotalEl = document.getElementById('checkout-subtotal');
+      const taxEl = document.getElementById('checkout-tax');
+      const totalEl = document.getElementById('checkout-total');
+      const placeOrderBtn = document.getElementById('place-order-btn');
+
+      try {
+        itemsList.innerHTML = `
+          <div class="text-center py-4 text-muted" style="font-size: 0.9rem;">
+            Loading order details...
+          </div>
+        `;
+
+        const response = await apiFetch('/cart');
+        checkoutCart = response.data;
+        const items = checkoutCart && checkoutCart.items ? checkoutCart.items : [];
+
+        if (items.length === 0) {
+          itemsList.innerHTML = `
+            <div class="alert alert-info" style="font-size: 0.88rem;">
+              <span>Your shopping cart is currently empty.</span>
+            </div>
+          `;
+          subtotalEl.textContent = '$0.00';
+          taxEl.textContent = '$0.00';
+          totalEl.textContent = '$0.00';
+          placeOrderBtn.disabled = true;
+          placeOrderBtn.textContent = 'Cart is Empty';
+          showToast('Your cart is empty. Please add items to proceed.', 'warning', 3000);
+          return;
+        }
+
+        // Render live cart items
+        itemsList.innerHTML = items.map(item => `
+          <div class="order-mini-item">
+            <div>
+              <div class="font-semibold" style="color: var(--neutral-900);">
+                ${escapeHtml(item.product_name)}
+              </div>
+              <div class="text-muted" style="font-size: 0.82rem;">
+                Qty: ${item.quantity} &bull; $${Number(item.current_price).toFixed(2)} each
+              </div>
+            </div>
+            <div class="font-semibold">
+              $${(Number(item.current_price) * item.quantity).toFixed(2)}
+            </div>
+          </div>
+        `).join('');
+
+        // Authoritative server-calculated totals
+        subtotalEl.textContent = `$${Number(checkoutCart.subtotal).toFixed(2)}`;
+        taxEl.textContent = `$${Number(checkoutCart.estimated_tax).toFixed(2)}`;
+        totalEl.textContent = `$${Number(checkoutCart.total_amount).toFixed(2)}`;
+        placeOrderBtn.disabled = false;
+        placeOrderBtn.textContent = 'Confirm & Place Order';
+
+      } catch (err) {
+        console.error('Failed to load checkout:', err);
+        itemsList.innerHTML = `
+          <div class="alert alert-danger" style="font-size: 0.88rem;">
+            <span>Failed to load cart items: ${escapeHtml(err.message || 'Server error')}</span>
+          </div>
+        `;
+        placeOrderBtn.disabled = true;
+        showToast(err.message || 'Error connecting to cart service', 'error');
+      }
+    }
 
     function selectAddress(addressId) {
       document.querySelectorAll('.address-card').forEach(card => card.classList.remove('selected'));
@@ -349,20 +421,43 @@
       showToast('Address added successfully!', 'success');
     }
 
+    function getSelectedShippingAddress() {
+      const selectedCard = document.querySelector('.address-card.selected');
+      if (!selectedCard) return null;
+
+      // Extract text content of address lines
+      const paragraphs = selectedCard.querySelectorAll('p');
+      const lines = [];
+      paragraphs.forEach(p => lines.push(p.textContent.trim()));
+      return lines.join(', ');
+    }
+
     function handlePlaceOrder(e) {
       e.preventDefault();
+
+      if (!checkoutCart || !checkoutCart.items || checkoutCart.items.length === 0) {
+        showToast('Cannot place order: your cart is empty.', 'warning');
+        return;
+      }
+
+      const address = getSelectedShippingAddress();
+      if (!address) {
+        showToast('Please select a shipping address before proceeding.', 'warning');
+        return;
+      }
+
       const btn = document.getElementById('place-order-btn');
       btn.disabled = true;
-      btn.textContent = 'Processing Transaction...';
+      btn.textContent = 'Validating Stock & Price...';
 
-      showToast('Simulating order creation & transactional validation...', 'info');
+      showToast('Step 2.3 Verified: Server pricing & address confirmed!', 'success', 2000);
 
+      // Day 3 will replace this simulation with the transactional POST /api/orders
       setTimeout(() => {
-        showToast('Order #ORD-1003 successfully placed!', 'success', 2500);
-        setTimeout(() => {
-          window.location.href = 'my-orders.html?orderPlaced=true';
-        }, 1200);
-      }, 1000);
+        showToast('Day 2 Milestone complete! Ready for Day 3 Transactional Orders.', 'info', 3000);
+        btn.disabled = false;
+        btn.textContent = 'Confirm & Place Order';
+      }, 1500);
     }
 
     function escapeHtml(str) {
@@ -370,6 +465,13 @@
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
       }[m]));
     }
+
+    // Initialize checkout data on DOM ready
+    document.addEventListener('DOMContentLoaded', () => {
+      if (currentUser) {
+        loadCheckoutData();
+      }
+    });
   </script>
 </body>
 </html>
