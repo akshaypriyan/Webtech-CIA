@@ -24,10 +24,10 @@ router.use('/auth', authRoutes);
 // ==========================================
 
 // Person 1: Storefront, Products, Profiles & Reviews
-// const productRoutes = require('./product.routes');
+const productRoutes = require('./products.routes');
 // const profileRoutes = require('./profile.routes');
 // const reviewRoutes = require('./review.routes');
-// router.use('/products', productRoutes);
+router.use('/products', productRoutes);
 // router.use('/profile', profileRoutes);
 // router.use('/reviews', reviewRoutes);
 
