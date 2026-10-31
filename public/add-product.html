@@ -14,13 +14,13 @@
     <main class="content">
       <header class="page-header">
         <div>
-          <h1>Add Product</h1>
-          <p>Create a new listing for your store.</p>
+          <h1 id="page-title">Add Product</h1>
+          <p id="page-subtitle">Create a new listing for your store.</p>
         </div>
         <a class="btn btn--secondary" href="seller-products.html">&larr; Back to products</a>
       </header>
 
-      <p class="demo-note">Demo form &mdash; validation runs in the browser, but nothing is submitted or uploaded.</p>
+      <p class="sub" id="form-status" role="status" hidden></p>
 
       <form id="product-form" novalidate>
         <div class="form-layout">
@@ -59,8 +59,16 @@
               </div>
             </div>
 
+            <div class="field" id="status-field" hidden>
+              <label for="status">Listing status</label>
+              <select id="status" name="status">
+                <option value="Active">Active (visible in the storefront)</option>
+                <option value="Inactive">Inactive (hidden from customers)</option>
+              </select>
+            </div>
+
             <div class="form-actions">
-              <button type="submit" class="btn btn--primary">Save product</button>
+              <button type="submit" class="btn btn--primary" id="submit-btn">Save product</button>
               <button type="reset" class="btn btn--secondary" id="reset-btn">Reset</button>
             </div>
           </section>
@@ -69,7 +77,7 @@
             <div class="field">
               <label for="image">Product image</label>
               <input type="file" id="image" name="image" accept="image/png,image/jpeg,image/webp" aria-describedby="image-hint image-error">
-              <span class="hint" id="image-hint">PNG, JPG or WebP, up to 2&nbsp;MB. Optional.</span>
+              <span class="hint" id="image-hint">PNG, JPG or WebP, up to 2&nbsp;MB. Optional<span id="image-hint-edit"></span>.</span>
               <span class="error" id="image-error"></span>
             </div>
             <div class="image-preview" id="image-preview" aria-live="polite">No image selected</div>
@@ -79,7 +87,7 @@
     </main>
   </div>
 
-  <script src="js/seller-data.js"></script>
+  <script src="js/api.js"></script>
   <script src="js/seller-layout.js"></script>
   <script src="js/add-product.js"></script>
 </body>
