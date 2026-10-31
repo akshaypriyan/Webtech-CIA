@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Details - MarketHub</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div id="navbar"></div>
+
+  <main class="py-12">
+    <div class="container">
+
+      <!-- Breadcrumb -->
+      <nav class="sf-breadcrumb" aria-label="breadcrumb">
+        <a href="index.html">Home</a>
+        <span class="sf-breadcrumb-sep">/</span>
+        <a href="products.html">Products</a>
+        <span class="sf-breadcrumb-sep">/</span>
+        <span id="breadcrumb-name">Product Details</span>
+      </nav>
+
+      <!-- ================================================ -->
+      <!-- Loading State                                    -->
+      <!-- ================================================ -->
+      <div class="sf-loading-state" id="detail-loading">
+        <div class="sf-spinner"></div>
+        <p>Loading product…</p>
+      </div>
+
+      <!-- ================================================ -->
+      <!-- Error State (404 or server error)               -->
+      <!-- ================================================ -->
+      <div class="sf-error-state" id="detail-error" style="display:none;">
+        <div style="font-size:3rem;">😕</div>
+        <h2>Product Not Found</h2>
+        <p id="detail-error-msg">This product does not exist or is no longer available.</p>
+        <a href="products.html" class="btn btn-primary">Browse All Products</a>
+      </div>
+
+      <!-- ================================================ -->
+      <!-- Product Detail Layout                           -->
+      <!-- ================================================ -->
+      <div id="detail-content" style="display:none;">
+
+        <div class="sf-detail-layout">
+
+          <!-- LEFT: Product Image -->
+          <div class="sf-detail-image-col">
+            <div class="sf-detail-img-wrap" id="detail-img-wrap">
+              <!-- Image or SVG placeholder rendered by JS -->
+            </div>
+          </div>
+
+          <!-- RIGHT: Product Info -->
+          <div class="sf-detail-info-col">
+
+            <!-- Category tag -->
+            <p class="sf-detail-category" id="detail-category"></p>
+
+            <!-- Product name -->
+            <h1 class="sf-detail-name" id="detail-name"></h1>
+
+            <!-- Seller info -->
+            <p class="sf-detail-seller">Sold by <strong id="detail-seller"></strong></p>
+
+            <!-- Rating + review count -->
+            <div class="sf-detail-rating" id="detail-rating"></div>
+
+            <!-- Price -->
+            <div class="sf-detail-price" id="detail-price"></div>
+
+            <!-- Stock status badge -->
+            <div id="detail-stock-badge"></div>
+
+            <!-- Description -->
+            <div class="sf-detail-description">
+              <h4>About this product</h4>
+              <p id="detail-description"></p>
+            </div>
+
+            <!-- Quantity selector -->
+            <div class="sf-detail-qty-row" id="detail-qty-row">
+              <label for="qty-input" class="sf-filter-label">Quantity</label>
+              <div class="sf-qty-controls">
+                <button class="sf-qty-btn" id="qty-minus" aria-label="Decrease quantity">−</button>
+                <input type="number" id="qty-input" class="sf-qty-input"
+                       value="1" min="1" max="1" readonly>
+                <button class="sf-qty-btn" id="qty-plus" aria-label="Increase quantity">+</button>
+              </div>
+            </div>
+
+            <!-- Add to Cart button -->
+            <button class="btn btn-primary btn-lg sf-detail-cart-btn"
+                    id="add-to-cart-btn" style="width:100%;">
+              🛒 Add to Cart
+            </button>
+
+          </div>
+        </div>
+
+        <!-- ================================================ -->
+        <!-- Reviews Section Placeholder (Day 3)             -->
+        <!-- ================================================ -->
+        <section class="sf-reviews-section mt-12">
+          <h2>Customer Reviews</h2>
+          <div class="sf-reviews-placeholder">
+            <div style="font-size:2rem;">📝</div>
+            <p class="text-muted">
+              Reviews and ratings will be available in the next release.
+              <!-- TODO: Wire up GET /api/reviews?product_id=:id (Day 3, Person 1) -->
+            </p>
+          </div>
+        </section>
+
+      </div><!-- /#detail-content -->
+    </div>
+  </main>
+
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="flex justify-between items-center flex-wrap gap-4">
+        <div>
+          <span style="font-weight: 800; font-size: 1.25rem; color: white;">Market<span class="brand-highlight">Hub</span></span>
+          <p style="color: var(--neutral-500); font-size: 0.88rem; margin-top: 4px;">Online Marketplace Web Application — Web Tech CIA Project</p>
+        </div>
+        <div class="flex gap-4">
+          <a href="index.html" style="color: var(--neutral-400);">Home</a>
+          <a href="products.html" style="color: var(--neutral-400);">Shop</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div>&copy; 2026 MarketHub Team.</div>
+      </div>
+    </div>
+  </footer>
+
+  <div id="toast-container"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/navbar.js"></script>
+  <script src="js/storefront.js"></script>
+  <script>
+    /* ============================================================
+     * product-details.html — Page Script
+     * ============================================================
+     * 1. Reads ?id= from the URL
+     * 2. Fetches GET /api/products/:id
+     * 3. Renders image, name, category, seller, price, stock, rating
+     * 4. Quantity selector (1 to stock_quantity)
+     * 5. Add to Cart button with role-based logic
+     * ============================================================ */
+
+    // Read product ID from URL (?id=42)
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = parseInt(urlParams.get('id'), 10);
+
+    // Keep a reference to the loaded product for the cart action
+    let currentProduct = null;
+
+    /* ---- Helper: SVG placeholder used when no image is available ---- */
+    const SVG_PLACEHOLDER = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+        <rect width="400" height="400" fill="#f1f5f9"/>
+        <rect x="120" y="110" width="160" height="120" rx="10" fill="#cbd5e1"/>
+        <circle cx="200" cy="270" r="36" fill="#cbd5e1"/>
+        <rect x="160" y="306" width="80" height="20" rx="6" fill="#cbd5e1"/>
+      </svg>`;
+
+    /* ---- Render the product into the page ---- */
+    function renderProduct(product) {
+      currentProduct = product;
+
+      const stock = parseInt(product.stock_quantity, 10);
+
+      // Breadcrumb update
+      document.getElementById('breadcrumb-name').textContent = product.product_name;
+      // Page title
+      document.title = `${product.product_name} - MarketHub`;
+
+      // Image
+      const imgWrap = document.getElementById('detail-img-wrap');
+      if (product.image) {
+        imgWrap.innerHTML = `
+          <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.product_name)}"
+               style="width:100%; height:100%; object-fit:cover; border-radius:var(--radius-md);"
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+          <div class="product-img-placeholder" style="display:none">${SVG_PLACEHOLDER}</div>`;
+      } else {
+        imgWrap.innerHTML = `<div class="product-img-placeholder">${SVG_PLACEHOLDER}</div>`;
+      }
+
+      // Category
+      document.getElementById('detail-category').textContent = product.category_name;
+
+      // Name
+      document.getElementById('detail-name').textContent = product.product_name;
+
+      // Seller
+      document.getElementById('detail-seller').textContent = product.seller_name;
+
+      // Rating
+      const ratingEl  = document.getElementById('detail-rating');
+      const rating    = parseFloat(product.avg_rating) || 0;
+      const reviews   = parseInt(product.review_count, 10) || 0;
+      const reviewTxt = reviews > 0 ? `${reviews} review${reviews !== 1 ? 's' : ''}` : 'No reviews yet';
+      ratingEl.innerHTML = `${renderStars(rating)}<span class="review-count" style="margin-left:0.5rem;">${reviewTxt}</span>`;
+
+      // Price
+      document.getElementById('detail-price').textContent = formatPrice(product.price);
+
+      // Stock badge
+      const badgeEl = document.getElementById('detail-stock-badge');
+      if (stock === 0) {
+        badgeEl.innerHTML = `<span class="product-badge badge-out-of-stock" style="font-size:0.9rem; padding:0.35rem 0.9rem;">Out of Stock</span>`;
+      } else {
+        badgeEl.innerHTML = `<span class="product-badge badge-in-stock" style="font-size:0.9rem; padding:0.35rem 0.9rem;">In Stock (${stock} available)</span>`;
+      }
+
+      // Description
+      document.getElementById('detail-description').textContent = product.description || 'No description provided.';
+
+      // Quantity selector
+      const qtyInput = document.getElementById('qty-input');
+      const qtyMinus = document.getElementById('qty-minus');
+      const qtyPlus  = document.getElementById('qty-plus');
+
+      if (stock === 0) {
+        // Disable quantity controls and cart button when out of stock
+        qtyInput.disabled = true;
+        qtyMinus.disabled = true;
+        qtyPlus.disabled  = true;
+        document.getElementById('add-to-cart-btn').disabled = true;
+        document.getElementById('add-to-cart-btn').textContent = 'Out of Stock';
+      } else {
+        qtyInput.max   = stock;
+        qtyInput.value = 1;
+
+        qtyMinus.addEventListener('click', () => {
+          const val = parseInt(qtyInput.value, 10);
+          if (val > 1) qtyInput.value = val - 1;
+        });
+
+        qtyPlus.addEventListener('click', () => {
+          const val = parseInt(qtyInput.value, 10);
+          if (val < stock) qtyInput.value = val + 1;
+        });
+      }
+
+      // Show the content section
+      document.getElementById('detail-loading').style.display = 'none';
+      document.getElementById('detail-content').style.display  = 'block';
+    }
+
+    /* ---- Add to Cart button logic ---- */
+    document.getElementById('add-to-cart-btn').addEventListener('click', async () => {
+      if (!currentProduct) return;
+
+      const token = getToken();
+      const user  = getUser();
+
+      // Not logged in → redirect to login with redirect back here
+      if (!token || !user) {
+        const returnUrl = encodeURIComponent(`product-details.html?id=${productId}`);
+        window.location.href = `login.html?redirect=${returnUrl}`;
+        return;
+      }
+
+      // Non-customer roles cannot add to cart
+      if (user.role !== 'Customer') {
+        showToast('Only customers can add items to cart', 'warning');
+        return;
+      }
+
+      // Customer: call cart API
+      const quantity = parseInt(document.getElementById('qty-input').value, 10) || 1;
+
+      try {
+        /* TODO (Day 3 / Person 2): POST /api/cart endpoint not yet implemented.
+         * When Person 2 wires up the cart API, replace the toast below with:
+         *   await apiFetch('/cart', { method: 'POST', body: { product_id: currentProduct.product_id, quantity } });
+         *   showToast('Added to cart!', 'success');
+         */
+        await apiFetch('/cart', {
+          method: 'POST',
+          body: { product_id: currentProduct.product_id, quantity }
+        });
+        showToast(`"${currentProduct.product_name}" added to cart!`, 'success');
+      } catch (err) {
+        if (err.status === 404 || err.message.includes('Cannot POST')) {
+          // Cart API not yet available — show friendly placeholder message
+          showToast('Cart feature coming soon! (API not yet available)', 'info');
+        } else {
+          showToast(err.message || 'Failed to add to cart. Please try again.', 'error');
+        }
+      }
+    });
+
+    /* ---- Fetch product on page load ---- */
+    async function loadProduct() {
+      // No ID in URL — redirect to catalog
+      if (!productId || isNaN(productId)) {
+        document.getElementById('detail-loading').style.display = 'none';
+        document.getElementById('detail-error').style.display   = 'block';
+        document.getElementById('detail-error-msg').textContent = 'No product ID specified.';
+        return;
+      }
+
+      try {
+        const resp = await apiFetch(`/products/${productId}`, { auth: false });
+        renderProduct(resp.data.product);
+      } catch (err) {
+        document.getElementById('detail-loading').style.display = 'none';
+        document.getElementById('detail-error').style.display   = 'block';
+        if (err.status === 404) {
+          document.getElementById('detail-error-msg').textContent =
+            'This product does not exist or is no longer available.';
+        } else {
+          document.getElementById('detail-error-msg').textContent =
+            err.message || 'Failed to load product details.';
+        }
+      }
+    }
+
+    loadProduct();
+  </script>
+</body>
+</html>
