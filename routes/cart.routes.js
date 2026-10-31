@@ -19,4 +19,13 @@ router.get('/', cartController.getCart);
 // POST /api/cart - Add item to cart or increment quantity
 router.post('/', cartController.addToCart);
 
+// PATCH /api/cart/items/:id - Update item quantity
+router.patch('/items/:id', cartController.updateCartItemQty);
+
+// DELETE /api/cart/items/:id - Remove a specific item from cart
+router.delete('/items/:id', cartController.removeCartItem);
+
+// DELETE /api/cart - Clear all items in cart
+router.delete('/', cartController.clearCart);
+
 module.exports = router;

@@ -330,17 +330,74 @@
       document.getElementById('summary-total').textContent = `$${Number(data.total_amount).toFixed(2)}`;
     }
 
-    // Placeholder handlers for Step 2.2 operations
-    function handleQtyChange(cartItemId, delta) {
-      showToast('Quantity update will be connected in Step 2.2!', 'info');
+    // Feature 1: Live Quantity Update via PATCH /api/cart/items/:id
+    async function handleQtyChange(cartItemId, delta) {
+      if (!cartData || !cartData.items) return;
+
+      const item = cartData.items.find(i => i.cart_item_id === cartItemId);
+      if (!item) return;
+
+      const newQty = item.quantity + delta;
+
+      // When quantity drops below 1 on minus click, remove the item
+      if (newQty < 1) {
+        await handleRemoveItem(cartItemId);
+        return;
+      }
+
+      if (newQty > item.stock_quantity) {
+        showToast(`Cannot add more. Only ${item.stock_quantity} available in stock.`, 'warning');
+        return;
+      }
+
+      try {
+        await apiFetch(`/cart/items/${cartItemId}`, {
+          method: 'PATCH',
+          body: { quantity: newQty }
+        });
+        showToast(`Updated "${item.product_name}" quantity to ${newQty}.`, 'success', 1500);
+        await loadCart();
+      } catch (err) {
+        console.error('Failed to update quantity:', err);
+        showToast(err.message || 'Failed to update quantity', 'error');
+      }
     }
 
-    function handleRemoveItem(cartItemId) {
-      showToast('Item removal will be connected in Step 2.2!', 'info');
+    // Feature 2: Remove a single item via DELETE /api/cart/items/:id
+    async function handleRemoveItem(cartItemId) {
+      const item = cartData && cartData.items ? cartData.items.find(i => i.cart_item_id === cartItemId) : null;
+      const itemName = item ? item.product_name : 'Item';
+
+      try {
+        await apiFetch(`/cart/items/${cartItemId}`, {
+          method: 'DELETE'
+        });
+        showToast(`Removed "${itemName}" from your cart.`, 'info');
+        await loadCart();
+      } catch (err) {
+        console.error('Failed to remove item:', err);
+        showToast(err.message || 'Failed to remove item', 'error');
+      }
     }
 
-    function clearCart() {
-      showToast('Clear cart will be connected in Step 2.2!', 'info');
+    // Feature 3: Clear all items in cart via DELETE /api/cart
+    async function clearCart() {
+      if (!cartData || !cartData.items || cartData.items.length === 0) return;
+
+      if (!confirm('Are you sure you want to remove all items from your shopping cart?')) {
+        return;
+      }
+
+      try {
+        await apiFetch('/cart', {
+          method: 'DELETE'
+        });
+        showToast('Your shopping cart has been cleared.', 'info');
+        await loadCart();
+      } catch (err) {
+        console.error('Failed to clear cart:', err);
+        showToast(err.message || 'Failed to clear cart', 'error');
+      }
     }
 
     function getProductEmoji(name) {
