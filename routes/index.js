@@ -44,9 +44,9 @@ router.use('/cart', cartRoutes);
 // Person 4: Governance, Categories & Administration
 const categoryRoutes = require('./category.routes');
 router.use('/categories', categoryRoutes);
-// const adminRoutes = require('./admin.routes');
+const adminRoutes = require('./admin.routes');
+router.use('/admin', adminRoutes);
 // const superadminRoutes = require('./superadmin.routes');
-// router.use('/admin', adminRoutes);
 // router.use('/superadmin', superadminRoutes);
 
 module.exports = router;
