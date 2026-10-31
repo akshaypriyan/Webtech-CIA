@@ -38,8 +38,8 @@ router.use('/cart', cartRoutes);
 // router.use('/orders', orderRoutes);
 
 // Person 3: Seller Portal & Fulfillment
-// const sellerRoutes = require('./seller.routes');
-// router.use('/seller', sellerRoutes);
+ const sellerProductRoutes = require('./sellerProducts');
+ router.use('/seller/products', sellerProductRoutes);
 
 // Person 4: Governance, Categories & Administration
 const categoryRoutes = require('./category.routes');

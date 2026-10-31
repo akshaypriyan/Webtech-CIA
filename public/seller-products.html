@@ -20,8 +20,6 @@
         <a class="btn btn--primary" href="add-product.html">+ Add Product</a>
       </header>
 
-      <p class="demo-note">Mock data. Deleting a product only affects this page until you reload &mdash; nothing is saved.</p>
-
       <section class="card" aria-label="Product list">
         <form class="toolbar" id="filters" role="search" onsubmit="return false">
           <div class="field field--grow">
@@ -33,12 +31,20 @@
             <select id="filter-category"><option value="">All categories</option></select>
           </div>
           <div class="field">
-            <label for="filter-status">Availability</label>
+            <label for="filter-stock">Availability</label>
+            <select id="filter-stock">
+              <option value="">All</option>
+              <option value="in">In Stock</option>
+              <option value="low">Low Stock</option>
+              <option value="out">Out of Stock</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="filter-status">Listing</label>
             <select id="filter-status">
               <option value="">All</option>
-              <option>In Stock</option>
-              <option>Low Stock</option>
-              <option>Out of Stock</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
             </select>
           </div>
         </form>
@@ -62,7 +68,7 @@
     </main>
   </div>
 
-  <script src="js/seller-data.js"></script>
+  <script src="js/api.js"></script>
   <script src="js/seller-layout.js"></script>
   <script src="js/seller-products.js"></script>
 </body>
