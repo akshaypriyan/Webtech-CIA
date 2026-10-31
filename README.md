@@ -239,3 +239,147 @@ Add `<div id="navbar"></div>` anywhere in your HTML `<body>`. The navbar will dy
    - Seed verification, end-to-end demo walkthrough, documentation wrap-up.
 
 ---
+
+---
+
+## 🛍️ Products API Reference (Day 2 — Person 1)
+
+All endpoints are **public** (no authentication required).
+
+### GET `/api/products/categories`
+
+Returns all **Active** categories.
+
+> ⚠️ **Route order note**: `/categories` is mounted **before** `/:id` in the router to avoid Express treating the string "categories" as a product ID.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "6 active categories retrieved",
+  "data": {
+    "categories": [
+      { "category_id": 1, "category_name": "Beauty", "description": "..." },
+      { "category_id": 2, "category_name": "Books",  "description": "..." }
+    ]
+  }
+}
+```
+
+---
+
+### GET `/api/products`
+
+Paginated product listing with optional filters.
+
+**Query Parameters:**
+
+| Param | Type | Default | Description |
+|:---|:---|:---|:---|
+| `search` | string | — | Keyword search on `product_name` and `description` |
+| `category` | integer | — | Filter by `category_id` |
+| `minPrice` | number | — | Minimum price (≥ 0) |
+| `maxPrice` | number | — | Maximum price (≥ 0, must be ≥ minPrice) |
+| `sort` | string | `newest` | One of: `newest`, `price_asc`, `price_desc`, `name` |
+| `page` | integer | `1` | Page number |
+| `limit` | integer | `12` | Items per page (max 48) |
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "12 products retrieved (page 1 of 1)",
+  "data": {
+    "products": [
+      {
+        "product_id": 1,
+        "product_name": "Pro Wireless Noise-Cancelling Headphones",
+        "price": "149.99",
+        "stock_quantity": 35,
+        "category_id": 1,
+        "category_name": "Electronics",
+        "seller_name": "Apex Retail Store",
+        "seller_id": 3,
+        "avg_rating": null,
+        "review_count": 0
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 12,
+      "total": 12,
+      "totalPages": 1
+    }
+  }
+}
+```
+
+**Validation errors (HTTP 400):**
+```json
+{ "success": false, "message": "Invalid query param: \"minPrice\" must be a non-negative number (e.g. minPrice=10)" }
+```
+
+---
+
+### GET `/api/products/:id`
+
+Single product details. Returns **404** if the product doesn't exist or is inactive.
+
+**Example:** `GET /api/products/1`
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Product details retrieved successfully",
+  "data": {
+    "product": {
+      "product_id": 1,
+      "product_name": "Pro Wireless Noise-Cancelling Headphones",
+      "description": "Over-ear bluetooth 5.3 headphones...",
+      "price": "149.99",
+      "stock_quantity": 35,
+      "image": null,
+      "category_name": "Electronics",
+      "seller_name": "Apex Retail Store",
+      "avg_rating": null,
+      "review_count": 0
+    }
+  }
+}
+```
+
+**Response (404):**
+```json
+{ "success": false, "message": "Product with ID 99999 was not found or is currently unavailable" }
+```
+
+---
+
+## 🗂️ Teammate Notes (Day 2)
+
+### `/uploads` Static Files
+
+Person 3 (Seller Portal) will add `multer` for product image uploads. The uploads folder will be served as:
+```javascript
+// server.js — to be added by Person 3 when multer is configured
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+```
+Until then, `products.image` may be `null`. The storefront falls back to an inline **SVG placeholder** — no broken image icons.
+
+### Cart API (Person 2)
+
+`product-details.html` calls `POST /api/cart` when a Customer clicks "Add to Cart". If the endpoint isn't available yet, it catches the 404 and shows:
+> *"Cart feature coming soon! (API not yet available)"*
+
+Person 2 should expose `POST /api/cart` accepting `{ product_id, quantity }`.
+
+### Storefront Shared Helpers (`public/js/storefront.js`)
+
+Add `<script src="js/storefront.js"></script>` to any page that needs:
+- `escapeHtml(str)` — XSS-safe HTML entity encoding
+- `formatPrice(price)` — ₹ Indian number format  
+- `renderStars(rating)` — filled/half/empty star HTML
+- `renderProductCard(product)` — full product card HTML
+
+---
