@@ -157,8 +157,113 @@ async function addToCart(req, res, next) {
   }
 }
 
+/**
+ * PATCH /api/cart/items/:id
+ * Updates quantity of a specific cart item with server-side stock validation.
+ */
+async function updateCartItemQty(req, res, next) {
+  try {
+    const customerId = req.user.user_id;
+    const cartItemId = parseInt(req.params.id, 10);
+    const { quantity } = req.body;
+
+    const newQty = parseInt(quantity, 10);
+    if (!cartItemId || isNaN(newQty) || newQty <= 0) {
+      return sendError(res, 'A valid positive quantity is required.', 400);
+    }
+
+    const cartId = await getOrCreateCartId(customerId);
+
+    // Verify item belongs to this customer's cart and check current stock
+    const [items] = await pool.query(
+      `SELECT ci.cart_item_id, ci.product_id, p.stock_quantity, p.product_name, p.price
+       FROM cart_items ci
+       JOIN products p ON ci.product_id = p.product_id
+       WHERE ci.cart_item_id = ? AND ci.cart_id = ?`,
+      [cartItemId, cartId]
+    );
+
+    if (items.length === 0) {
+      return sendError(res, 'Cart item not found in your cart.', 404);
+    }
+
+    const item = items[0];
+    if (newQty > item.stock_quantity) {
+      return sendError(
+        res,
+        `Cannot set quantity to ${newQty}. Only ${item.stock_quantity} units available in stock.`,
+        400
+      );
+    }
+
+    // Update quantity and record current price
+    await pool.query(
+      'UPDATE cart_items SET quantity = ?, price = ? WHERE cart_item_id = ? AND cart_id = ?',
+      [newQty, item.price, cartItemId, cartId]
+    );
+
+    return sendSuccess(res, `Updated quantity for "${item.product_name}".`, {
+      cart_item_id: cartItemId,
+      quantity: newQty
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * DELETE /api/cart/items/:id
+ * Removes a specific item from the customer's cart.
+ */
+async function removeCartItem(req, res, next) {
+  try {
+    const customerId = req.user.user_id;
+    const cartItemId = parseInt(req.params.id, 10);
+
+    if (!cartItemId) {
+      return sendError(res, 'Valid cart item ID is required.', 400);
+    }
+
+    const cartId = await getOrCreateCartId(customerId);
+
+    // Enforce tenant security: item must belong to this customer's cart
+    const [result] = await pool.query(
+      'DELETE FROM cart_items WHERE cart_item_id = ? AND cart_id = ?',
+      [cartItemId, cartId]
+    );
+
+    if (result.affectedRows === 0) {
+      return sendError(res, 'Cart item not found or already removed.', 404);
+    }
+
+    return sendSuccess(res, 'Item removed from cart.');
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * DELETE /api/cart
+ * Clears all items in the customer's cart.
+ */
+async function clearCart(req, res, next) {
+  try {
+    const customerId = req.user.user_id;
+    const cartId = await getOrCreateCartId(customerId);
+
+    await pool.query('DELETE FROM cart_items WHERE cart_id = ?', [cartId]);
+
+    return sendSuccess(res, 'Shopping cart cleared successfully.');
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getOrCreateCartId,
   getCart,
-  addToCart
+  addToCart,
+  updateCartItemQty,
+  removeCartItem,
+  clearCart
 };
