@@ -21,7 +21,7 @@
             <span>✨ Full-Stack Multi-Role E-Commerce</span>
           </div>
           <h1 class="hero-title">
-            Discover, Shop & Sell With Confidence
+            Discover, Shop &amp; Sell With Confidence
           </h1>
           <p class="hero-subtitle">
             A collaborative multi-vendor platform bridging customers, independent sellers, 
@@ -36,7 +36,9 @@
       </div>
     </section>
 
-    <!-- Featured Categories Section -->
+    <!-- ============================================================ -->
+    <!-- Featured Categories Section — loaded live from API           -->
+    <!-- ============================================================ -->
     <section class="py-12">
       <div class="container">
         <div class="flex items-center justify-between mb-8 flex-wrap gap-4">
@@ -47,42 +49,15 @@
           <a href="products.html" class="btn btn-outline btn-sm">View All Categories &rarr;</a>
         </div>
 
+        <!-- Categories render here; JS fills it from /api/products/categories -->
         <div class="grid grid-cols-3 gap-6" id="categories-grid">
-          <div class="category-card">
-            <div class="category-icon">⚡</div>
-            <h3 class="category-title">Electronics</h3>
-            <p class="text-muted" style="font-size: 0.88rem; margin: 0;">Laptops, audio, gaming & smart gadgets</p>
-          </div>
-
-          <div class="category-card">
-            <div class="category-icon">👗</div>
-            <h3 class="category-title">Fashion</h3>
-            <p class="text-muted" style="font-size: 0.88rem; margin: 0;">Apparel, luxury leather & street wear</p>
-          </div>
-
-          <div class="category-card">
-            <div class="category-icon">🍳</div>
-            <h3 class="category-title">Home & Kitchen</h3>
-            <p class="text-muted" style="font-size: 0.88rem; margin: 0;">Modern cookware, smart fryers & appliances</p>
-          </div>
-
-          <div class="category-card">
-            <div class="category-icon">📚</div>
-            <h3 class="category-title">Books</h3>
-            <p class="text-muted" style="font-size: 0.88rem; margin: 0;">Programming bestsellers, fiction & non-fiction</p>
-          </div>
-
-          <div class="category-card">
-            <div class="category-icon">✨</div>
-            <h3 class="category-title">Beauty & Wellness</h3>
-            <p class="text-muted" style="font-size: 0.88rem; margin: 0;">Clean skincare, serums & luxury grooming</p>
-          </div>
-
-          <div class="category-card">
-            <div class="category-icon">⚽</div>
-            <h3 class="category-title">Sports & Outdoors</h3>
-            <p class="text-muted" style="font-size: 0.88rem; margin: 0;">Gym equipment, footwear & camping gear</p>
-          </div>
+          <!-- Loading skeleton shown while API call is in-flight -->
+          <div class="sf-skeleton-card"></div>
+          <div class="sf-skeleton-card"></div>
+          <div class="sf-skeleton-card"></div>
+          <div class="sf-skeleton-card"></div>
+          <div class="sf-skeleton-card"></div>
+          <div class="sf-skeleton-card"></div>
         </div>
       </div>
     </section>
@@ -130,6 +105,36 @@
         </div>
       </div>
     </section>
+
+    <!-- ============================================================ -->
+    <!-- Latest Products Section — first 8, sort=newest              -->
+    <!-- ============================================================ -->
+    <section class="py-12">
+      <div class="container">
+        <div class="flex items-center justify-between mb-8 flex-wrap gap-4">
+          <div>
+            <h2>Latest Products</h2>
+            <p>Fresh arrivals from our verified sellers</p>
+          </div>
+          <a href="products.html" class="btn btn-outline btn-sm">View All Products &rarr;</a>
+        </div>
+
+        <!-- Loading state shown until API responds -->
+        <div id="latest-products-loading" class="sf-loading-state">
+          <div class="sf-spinner"></div>
+          <p>Loading products…</p>
+        </div>
+
+        <!-- Products grid — populated by JS -->
+        <div class="sf-product-grid" id="latest-products-grid" style="display:none;"></div>
+
+        <!-- Error state — shown if API call fails -->
+        <div id="latest-products-error" class="sf-error-state" style="display:none;">
+          <div style="font-size:2rem;">⚠️</div>
+          <p>Could not load products. Please try refreshing.</p>
+        </div>
+      </div>
+    </section>
   </main>
 
   <!-- Site Footer -->
@@ -143,12 +148,13 @@
         <div class="flex gap-4">
           <a href="login.html" style="color: var(--neutral-400);">Login</a>
           <a href="register.html" style="color: var(--neutral-400);">Register</a>
+          <a href="products.html" style="color: var(--neutral-400);">Shop</a>
           <a href="api/health" target="_blank" style="color: var(--neutral-400);">API Status</a>
         </div>
       </div>
       <div class="footer-bottom">
-        <div>&copy; 2026 MarketHub Team. Built with Node.js, Express, MySQL & Vanilla JS.</div>
-        <div style="color: var(--neutral-500);">Person 1: Auth & Storefront Foundation</div>
+        <div>&copy; 2026 MarketHub Team. Built with Node.js, Express, MySQL &amp; Vanilla JS.</div>
+        <div style="color: var(--neutral-500);">Person 1: Auth &amp; Storefront Foundation</div>
       </div>
     </div>
   </footer>
@@ -159,5 +165,90 @@
   <!-- Scripts -->
   <script src="js/api.js"></script>
   <script src="js/navbar.js"></script>
+  <script src="js/storefront.js"></script>
+  <script>
+    /* ============================================================
+     * index.html — Page Script
+     * Fetches categories and latest products from the API and
+     * renders them into the page dynamically.
+     * ============================================================ */
+
+    // Emoji icons for each category (keyed by category name)
+    const CATEGORY_ICONS = {
+      'Electronics':   '⚡',
+      'Fashion':       '👗',
+      'Home & Kitchen':'🍳',
+      'Books':         '📚',
+      'Beauty':        '✨',
+      'Sports':        '⚽'
+    };
+
+    /* ---- Load & render categories ---- */
+    async function loadCategories() {
+      const grid = document.getElementById('categories-grid');
+      try {
+        const resp = await apiFetch('/products/categories', { auth: false });
+        const cats = resp.data.categories;
+
+        if (!cats || cats.length === 0) {
+          grid.innerHTML = '<p class="text-muted">No categories available.</p>';
+          return;
+        }
+
+        // Build category card HTML for each category from API
+        grid.innerHTML = cats.map(cat => {
+          const icon = CATEGORY_ICONS[cat.category_name] || '🛍️';
+          const name = escapeHtml(cat.category_name);
+          const desc = escapeHtml(cat.description || '');
+          const id   = cat.category_id;
+          return `
+            <a href="products.html?category=${id}" class="category-card" style="text-decoration:none; display:block;">
+              <div class="category-icon">${icon}</div>
+              <h3 class="category-title">${name}</h3>
+              <p class="text-muted" style="font-size: 0.88rem; margin: 0;">${desc}</p>
+            </a>`;
+        }).join('');
+      } catch (err) {
+        // On failure, fall back to static placeholder cards
+        grid.innerHTML = `
+          <div class="category-card"><div class="category-icon">⚡</div><h3 class="category-title">Electronics</h3></div>
+          <div class="category-card"><div class="category-icon">👗</div><h3 class="category-title">Fashion</h3></div>
+          <div class="category-card"><div class="category-icon">🍳</div><h3 class="category-title">Home &amp; Kitchen</h3></div>
+          <div class="category-card"><div class="category-icon">📚</div><h3 class="category-title">Books</h3></div>
+          <div class="category-card"><div class="category-icon">✨</div><h3 class="category-title">Beauty</h3></div>
+          <div class="category-card"><div class="category-icon">⚽</div><h3 class="category-title">Sports</h3></div>`;
+      }
+    }
+
+    /* ---- Load & render latest 8 products ---- */
+    async function loadLatestProducts() {
+      const loading = document.getElementById('latest-products-loading');
+      const grid    = document.getElementById('latest-products-grid');
+      const error   = document.getElementById('latest-products-error');
+
+      try {
+        const resp = await apiFetch('/products?sort=newest&limit=8', { auth: false });
+        const products = resp.data.products;
+
+        loading.style.display = 'none';
+
+        if (!products || products.length === 0) {
+          grid.style.display = 'block';
+          grid.innerHTML = '<p class="text-muted" style="grid-column:1/-1; text-align:center;">No products listed yet.</p>';
+          return;
+        }
+
+        grid.style.display = 'grid';
+        grid.innerHTML = products.map(renderProductCard).join('');
+      } catch (err) {
+        loading.style.display  = 'none';
+        error.style.display    = 'block';
+      }
+    }
+
+    // Kick off both fetches in parallel
+    loadCategories();
+    loadLatestProducts();
+  </script>
 </body>
 </html>

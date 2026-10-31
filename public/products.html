@@ -11,22 +11,367 @@
 
   <main class="py-12">
     <div class="container">
-      <div class="card">
-        <div class="card-body text-center py-12">
-          <div style="font-size: 3rem; margin-bottom: 1rem;">🛍️</div>
-          <h2>Product Catalog & Storefront</h2>
-          <p class="text-muted" style="max-width: 500px; margin: 0 auto 1.5rem;">
-            Welcome to the marketplace catalog! Person 1 Day 2 feature development will populate 
-            this view with search filters, dynamic category tabs, and live product listings.
-          </p>
-          <a href="index.html" class="btn btn-primary">Return to Home</a>
+
+      <!-- Page Header -->
+      <div class="mb-8">
+        <h1 style="margin-bottom:0.25rem;">Product Catalog</h1>
+        <p class="text-muted">Browse, filter, and discover products from our verified sellers</p>
+      </div>
+
+      <!-- ===================================================== -->
+      <!-- Filter Bar                                            -->
+      <!-- ===================================================== -->
+      <div class="sf-filter-bar" id="filter-bar">
+
+        <!-- Search box — debounced 300ms -->
+        <div class="sf-filter-group sf-search-group">
+          <label for="search-input" class="sf-filter-label">Search</label>
+          <input type="text" id="search-input" class="sf-filter-input"
+                 placeholder="Search products…" autocomplete="off">
+        </div>
+
+        <!-- Category dropdown — populated from API -->
+        <div class="sf-filter-group">
+          <label for="category-select" class="sf-filter-label">Category</label>
+          <select id="category-select" class="sf-filter-select">
+            <option value="">All Categories</option>
+          </select>
+        </div>
+
+        <!-- Min price -->
+        <div class="sf-filter-group sf-price-group">
+          <label for="min-price" class="sf-filter-label">Min Price (₹)</label>
+          <input type="number" id="min-price" class="sf-filter-input"
+                 placeholder="0" min="0" step="0.01">
+        </div>
+
+        <!-- Max price -->
+        <div class="sf-filter-group sf-price-group">
+          <label for="max-price" class="sf-filter-label">Max Price (₹)</label>
+          <input type="number" id="max-price" class="sf-filter-input"
+                 placeholder="Any" min="0" step="0.01">
+        </div>
+
+        <!-- Sort dropdown -->
+        <div class="sf-filter-group">
+          <label for="sort-select" class="sf-filter-label">Sort By</label>
+          <select id="sort-select" class="sf-filter-select">
+            <option value="newest">Newest First</option>
+            <option value="price_asc">Price: Low to High</option>
+            <option value="price_desc">Price: High to Low</option>
+            <option value="name">Name A–Z</option>
+          </select>
+        </div>
+
+        <!-- Clear Filters button -->
+        <div class="sf-filter-group sf-filter-clear">
+          <button class="btn btn-outline btn-sm" id="clear-filters-btn">Clear Filters</button>
         </div>
       </div>
+
+      <!-- Results summary e.g. "Showing 12 of 48 products" -->
+      <div class="sf-results-summary" id="results-summary" style="display:none;"></div>
+
+      <!-- ===================================================== -->
+      <!-- Product Grid Area                                     -->
+      <!-- ===================================================== -->
+
+      <!-- Loading state -->
+      <div class="sf-loading-state" id="products-loading">
+        <div class="sf-spinner"></div>
+        <p>Loading products…</p>
+      </div>
+
+      <!-- Error state -->
+      <div class="sf-error-state" id="products-error" style="display:none;">
+        <div style="font-size:2.5rem;">⚠️</div>
+        <h3>Something went wrong</h3>
+        <p id="products-error-msg">Could not load products. Please try again.</p>
+        <button class="btn btn-primary" onclick="fetchProducts()">Retry</button>
+      </div>
+
+      <!-- Empty state -->
+      <div class="sf-empty-state" id="products-empty" style="display:none;">
+        <div style="font-size:3rem;">🔍</div>
+        <h3>No products found</h3>
+        <p>Try adjusting your filters or search term.</p>
+        <button class="btn btn-outline" id="empty-clear-btn">Clear Filters</button>
+      </div>
+
+      <!-- Product grid -->
+      <div class="sf-product-grid" id="products-grid" style="display:none;"></div>
+
+      <!-- ===================================================== -->
+      <!-- Pagination Controls                                   -->
+      <!-- ===================================================== -->
+      <div class="sf-pagination" id="pagination" style="display:none;"></div>
+
     </div>
   </main>
 
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="flex justify-between items-center flex-wrap gap-4">
+        <div>
+          <span style="font-weight: 800; font-size: 1.25rem; color: white;">Market<span class="brand-highlight">Hub</span></span>
+          <p style="color: var(--neutral-500); font-size: 0.88rem; margin-top: 4px;">Online Marketplace Web Application — Web Tech CIA Project</p>
+        </div>
+        <div class="flex gap-4">
+          <a href="index.html" style="color: var(--neutral-400);">Home</a>
+          <a href="login.html" style="color: var(--neutral-400);">Login</a>
+          <a href="register.html" style="color: var(--neutral-400);">Register</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div>&copy; 2026 MarketHub Team. Built with Node.js, Express, MySQL &amp; Vanilla JS.</div>
+      </div>
+    </div>
+  </footer>
+
   <div id="toast-container"></div>
+
   <script src="js/api.js"></script>
   <script src="js/navbar.js"></script>
+  <script src="js/storefront.js"></script>
+  <script>
+    /* ============================================================
+     * products.html — Page Script
+     * ============================================================
+     * - Reads filters from URL query params on page load
+     * - Updates URL via pushState when any filter changes
+     * - Debounces the search input 300ms to avoid excessive API calls
+     * - Renders product cards, pagination, and empty/error states
+     * ============================================================ */
+
+    // --- State ---
+    let currentPage  = 1;
+    let debounceTimer = null;
+
+    // --- DOM refs ---
+    const searchInput    = document.getElementById('search-input');
+    const categorySelect = document.getElementById('category-select');
+    const minPriceInput  = document.getElementById('min-price');
+    const maxPriceInput  = document.getElementById('max-price');
+    const sortSelect     = document.getElementById('sort-select');
+    const clearBtn       = document.getElementById('clear-filters-btn');
+    const emptyClearBtn  = document.getElementById('empty-clear-btn');
+
+    const productsLoading = document.getElementById('products-loading');
+    const productsError   = document.getElementById('products-error');
+    const productsErrorMsg= document.getElementById('products-error-msg');
+    const productsEmpty   = document.getElementById('products-empty');
+    const productsGrid    = document.getElementById('products-grid');
+    const paginationEl    = document.getElementById('pagination');
+    const summaryEl       = document.getElementById('results-summary');
+
+    /* ---- 1. Load categories into dropdown from API ---- */
+    async function loadCategoryOptions() {
+      try {
+        const resp = await apiFetch('/products/categories', { auth: false });
+        const cats = resp.data.categories || [];
+        cats.forEach(cat => {
+          const opt = document.createElement('option');
+          opt.value = cat.category_id;
+          opt.textContent = cat.category_name;
+          categorySelect.appendChild(opt);
+        });
+      } catch (e) {
+        // Non-fatal: dropdown stays as "All Categories"
+      }
+    }
+
+    /* ---- 2. Read current filter values from form ---- */
+    function getFilters() {
+      return {
+        search:   searchInput.value.trim(),
+        category: categorySelect.value,
+        minPrice: minPriceInput.value.trim(),
+        maxPrice: maxPriceInput.value.trim(),
+        sort:     sortSelect.value,
+        page:     currentPage
+      };
+    }
+
+    /* ---- 3. Sync form controls from URL query params ---- */
+    function readFiltersFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('search'))   searchInput.value    = params.get('search');
+      if (params.get('category')) categorySelect.value = params.get('category');
+      if (params.get('minPrice')) minPriceInput.value  = params.get('minPrice');
+      if (params.get('maxPrice')) maxPriceInput.value  = params.get('maxPrice');
+      if (params.get('sort'))     sortSelect.value     = params.get('sort');
+      if (params.get('page'))     currentPage          = parseInt(params.get('page'), 10) || 1;
+    }
+
+    /* ---- 4. Push current filter state into browser URL ---- */
+    function pushFiltersToURL(filters) {
+      const params = new URLSearchParams();
+      if (filters.search)   params.set('search',   filters.search);
+      if (filters.category) params.set('category', filters.category);
+      if (filters.minPrice) params.set('minPrice', filters.minPrice);
+      if (filters.maxPrice) params.set('maxPrice', filters.maxPrice);
+      if (filters.sort && filters.sort !== 'newest') params.set('sort', filters.sort);
+      if (filters.page > 1) params.set('page', filters.page);
+      const qs = params.toString();
+      history.pushState(null, '', qs ? `?${qs}` : window.location.pathname);
+    }
+
+    /* ---- 5. Show / hide UI states ---- */
+    function setUIState(state) {
+      productsLoading.style.display = state === 'loading' ? 'flex' : 'none';
+      productsError.style.display   = state === 'error'   ? 'block' : 'none';
+      productsEmpty.style.display   = state === 'empty'   ? 'block' : 'none';
+      productsGrid.style.display    = state === 'results' ? 'grid'  : 'none';
+      paginationEl.style.display    = state === 'results' ? 'flex'  : 'none';
+      summaryEl.style.display       = state === 'results' ? 'block' : 'none';
+    }
+
+    /* ---- 6. Render pagination buttons ---- */
+    function renderPagination(pagination) {
+      const { page, totalPages, total, limit } = pagination;
+      if (totalPages <= 1) {
+        paginationEl.style.display = 'none';
+        return;
+      }
+      paginationEl.style.display = 'flex';
+
+      let html = '';
+
+      // Previous button
+      html += `<button class="sf-page-btn" ${page <= 1 ? 'disabled' : ''}
+                data-page="${page - 1}">&#8592; Prev</button>`;
+
+      // Page number buttons (show up to 5 pages around current)
+      const start = Math.max(1, page - 2);
+      const end   = Math.min(totalPages, page + 2);
+
+      if (start > 1) {
+        html += `<button class="sf-page-btn" data-page="1">1</button>`;
+        if (start > 2) html += `<span class="sf-page-ellipsis">…</span>`;
+      }
+
+      for (let i = start; i <= end; i++) {
+        html += `<button class="sf-page-btn ${i === page ? 'sf-page-active' : ''}"
+                         data-page="${i}">${i}</button>`;
+      }
+
+      if (end < totalPages) {
+        if (end < totalPages - 1) html += `<span class="sf-page-ellipsis">…</span>`;
+        html += `<button class="sf-page-btn" data-page="${totalPages}">${totalPages}</button>`;
+      }
+
+      // Next button
+      html += `<button class="sf-page-btn" ${page >= totalPages ? 'disabled' : ''}
+                data-page="${page + 1}">Next &#8594;</button>`;
+
+      paginationEl.innerHTML = html;
+
+      // Attach click events to page buttons
+      paginationEl.querySelectorAll('.sf-page-btn:not([disabled])').forEach(btn => {
+        btn.addEventListener('click', () => {
+          currentPage = parseInt(btn.dataset.page, 10);
+          fetchProducts();
+          // Scroll back to top of grid
+          document.getElementById('filter-bar').scrollIntoView({ behavior: 'smooth' });
+        });
+      });
+    }
+
+    /* ---- 7. Main fetch & render function ---- */
+    async function fetchProducts() {
+      setUIState('loading');
+
+      const filters = getFilters();
+      pushFiltersToURL(filters);
+
+      // Build API query string from filter values
+      const params = new URLSearchParams();
+      if (filters.search)   params.set('search',   filters.search);
+      if (filters.category) params.set('category', filters.category);
+      if (filters.minPrice) params.set('minPrice', filters.minPrice);
+      if (filters.maxPrice) params.set('maxPrice', filters.maxPrice);
+      params.set('sort',  filters.sort  || 'newest');
+      params.set('page',  filters.page  || 1);
+      params.set('limit', 12);
+
+      try {
+        const resp     = await apiFetch(`/products?${params.toString()}`, { auth: false });
+        const products = resp.data.products;
+        const pg       = resp.data.pagination;
+
+        if (!products || products.length === 0) {
+          setUIState('empty');
+          return;
+        }
+
+        // Render cards
+        productsGrid.innerHTML = products.map(renderProductCard).join('');
+        setUIState('results');
+
+        // Results summary text
+        const start = (pg.page - 1) * pg.limit + 1;
+        const end   = Math.min(pg.page * pg.limit, pg.total);
+        summaryEl.textContent = `Showing ${start}–${end} of ${pg.total} product${pg.total !== 1 ? 's' : ''}`;
+
+        renderPagination(pg);
+      } catch (err) {
+        const msg = err.message || 'Could not load products.';
+        productsErrorMsg.textContent = msg;
+        setUIState('error');
+      }
+    }
+
+    /* ---- 8. Debounced search handler ---- */
+    function onSearchChange() {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        currentPage = 1;
+        fetchProducts();
+      }, 300);
+    }
+
+    /* ---- 9. Immediate filter change handler ---- */
+    function onFilterChange() {
+      currentPage = 1;
+      fetchProducts();
+    }
+
+    /* ---- 10. Clear all filters ---- */
+    function clearFilters() {
+      searchInput.value    = '';
+      categorySelect.value = '';
+      minPriceInput.value  = '';
+      maxPriceInput.value  = '';
+      sortSelect.value     = 'newest';
+      currentPage          = 1;
+      fetchProducts();
+    }
+
+    /* ---- 11. Browser back/forward navigation support ---- */
+    window.addEventListener('popstate', () => {
+      readFiltersFromURL();
+      fetchProducts();
+    });
+
+    /* ---- Wire up event listeners ---- */
+    searchInput.addEventListener('input', onSearchChange);
+    categorySelect.addEventListener('change', onFilterChange);
+    minPriceInput.addEventListener('change', onFilterChange);
+    maxPriceInput.addEventListener('change', onFilterChange);
+    sortSelect.addEventListener('change', onFilterChange);
+    clearBtn.addEventListener('click', clearFilters);
+    emptyClearBtn.addEventListener('click', clearFilters);
+
+    /* ---- Initialize page ---- */
+    (async function init() {
+      // Load category dropdown options first (so URL-param can select one)
+      await loadCategoryOptions();
+      // Then apply any URL params to form controls
+      readFiltersFromURL();
+      // Finally fetch products with those filters
+      fetchProducts();
+    })();
+  </script>
 </body>
 </html>

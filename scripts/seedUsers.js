@@ -137,22 +137,27 @@ async function seedDatabase() {
     }
 
     // 4. Seed Sample Products for Seller
+    // Idempotent: skip if a product with the same name + seller_id already exists.
     console.log('\n Verifying Sample Products for Seller...');
     const sellerId = userMap['Seller'];
 
-    // Map categories
+    // Map categories by name → category_id
     const [catRows] = await connection.execute('SELECT category_id, category_name FROM categories');
     const catMap = {};
     catRows.forEach(c => { catMap[c.category_name] = c.category_id; });
 
+    // ----------------------------------------------------------------
+    // 12 sample products across all 6 categories (6 original + 6 new)
+    // ----------------------------------------------------------------
     const sampleProducts = [
+      // ---- Electronics (2) ----
       {
         name: 'Pro Wireless Noise-Cancelling Headphones',
         desc: 'Over-ear bluetooth 5.3 headphones with 40h battery life and active noise suppression.',
         price: 149.99,
         stock: 35,
         category: 'Electronics',
-        image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80'
+        image: null
       },
       {
         name: 'Custom Mechanical RGB Gaming Keyboard',
@@ -160,46 +165,103 @@ async function seedDatabase() {
         price: 89.50,
         stock: 50,
         category: 'Electronics',
-        image: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=600&auto=format&fit=crop&q=80'
+        image: null
       },
+      // ---- Fashion (2) ----
       {
         name: 'Classic Vintage Leather Bomber Jacket',
         desc: 'Handcrafted genuine lambskin leather jacket with premium quilted satin lining.',
         price: 189.00,
         stock: 20,
         category: 'Fashion',
-        image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=600&auto=format&fit=crop&q=80'
+        image: null
       },
+      {
+        name: 'Slim Fit Premium Cotton Chino Trousers',
+        desc: 'Stretch-comfort slim-fit chinos in versatile neutral tones, perfect for office or casual wear.',
+        price: 49.99,
+        stock: 80,
+        category: 'Fashion',
+        image: null
+      },
+      // ---- Home & Kitchen (2) ----
       {
         name: 'Digital Touchscreen Rapid Air Fryer (5.8 Qt)',
         desc: '8 preset cooking modes, dishwasher-safe nonstick basket, 360-degree heat circulation.',
         price: 99.99,
         stock: 25,
         category: 'Home & Kitchen',
-        image: 'https://images.unsplash.com/photo-1585659722983-3a675dabf23d?w=600&auto=format&fit=crop&q=80'
+        image: null
       },
+      {
+        name: 'Stainless Steel Vacuum Insulated Water Bottle (1L)',
+        desc: 'Triple-wall vacuum insulation keeps drinks cold 36h or hot 18h. BPA-free, leak-proof lid.',
+        price: 34.00,
+        stock: 120,
+        category: 'Home & Kitchen',
+        image: null
+      },
+      // ---- Books (2) ----
       {
         name: 'Clean Code: Handbook of Software Craftsmanship',
         desc: 'Renowned best-practices guide for writing maintainable, readable, and resilient code.',
         price: 38.50,
         stock: 60,
         category: 'Books',
-        image: 'https://images.unsplash.com/photo-1532012164546-f432f2e3777a?w=600&auto=format&fit=crop&q=80'
+        image: null
       },
+      {
+        name: 'The Pragmatic Programmer: Your Journey to Mastery',
+        desc: '20th anniversary edition covering agile practices, career growth, and timeless coding wisdom.',
+        price: 42.00,
+        stock: 45,
+        category: 'Books',
+        image: null
+      },
+      // ---- Beauty (2) ----
       {
         name: 'Hydrating Botanical Vitamin C Facial Serum',
         desc: 'Brightening antioxidant complex with pure hyaluronic acid and aloe vera extracts.',
         price: 26.00,
         stock: 45,
         category: 'Beauty',
-        image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=600&auto=format&fit=crop&q=80'
+        image: null
+      },
+      {
+        name: 'Natural Argan Oil Hair Repair Mask',
+        desc: 'Deep conditioning treatment with Moroccan argan oil for frizz control and intense shine.',
+        price: 18.50,
+        stock: 70,
+        category: 'Beauty',
+        image: null
+      },
+      // ---- Sports (2) ----
+      {
+        name: 'Adjustable Neoprene Dumbbell Set (5-25 kg)',
+        desc: 'Space-saving adjustable dumbbells with anti-roll base. Suitable for home gym workouts.',
+        price: 129.00,
+        stock: 30,
+        category: 'Sports',
+        image: null
+      },
+      {
+        name: 'Lightweight Marathon Running Shoes',
+        desc: 'Ultra-responsive foam midsole with breathable mesh upper. Ideal for long-distance road running.',
+        price: 110.00,
+        stock: 55,
+        category: 'Sports',
+        image: null
       }
     ];
 
     for (const prod of sampleProducts) {
       const categoryId = catMap[prod.category];
-      if (!categoryId) continue;
+      if (!categoryId) {
+        console.log(`   ! Skipping "${prod.name}" — category "${prod.category}" not found`);
+        continue;
+      }
 
+      // Idempotent check: skip if product with same name + seller_id exists
       const [existingProd] = await connection.execute(
         'SELECT product_id FROM products WHERE product_name = ? AND seller_id = ?',
         [prod.name, sellerId]
