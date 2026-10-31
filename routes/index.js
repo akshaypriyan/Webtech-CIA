@@ -46,7 +46,7 @@ const categoryRoutes = require('./category.routes');
 router.use('/categories', categoryRoutes);
 const adminRoutes = require('./admin.routes');
 router.use('/admin', adminRoutes);
-// const superadminRoutes = require('./superadmin.routes');
-// router.use('/superadmin', superadminRoutes);
+const superadminRoutes = require('./superadmin.routes');
+router.use('/superadmin', superadminRoutes);
 
 module.exports = router;
