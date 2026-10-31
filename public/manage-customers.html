@@ -66,23 +66,37 @@
   <script>
     requireRole('Admin', 'Super Admin');
 
-    let customers = [
-      { user_id: 101, name: 'Alex Johnson', email: 'customer@market.com', mobile: '9876543210', orders: 8, status: 'Active', joined: '2026-10-15' },
-      { user_id: 102, name: 'Priya Sharma', email: 'priya.s@example.com', mobile: '9876501234', orders: 3, status: 'Active', joined: '2026-10-18' },
-      { user_id: 103, name: 'Rahul Verma', email: 'rahul.v@example.com', mobile: '9812345678', orders: 0, status: 'Active', joined: '2026-10-22' },
-      { user_id: 104, name: 'Marcus Sterling', email: 'marcus.s@example.com', mobile: '9899887766', orders: 1, status: 'Blocked', joined: '2026-10-05' }
-    ];
+    let customers = [];
 
     const tbody = document.getElementById('customers-table-body');
     const searchInput = document.getElementById('customer-search-input');
     const statusFilter = document.getElementById('customer-status-filter');
+
+    async function loadCustomers() {
+      try {
+        const queryParams = new URLSearchParams();
+        if (statusFilter.value !== 'ALL') queryParams.append('status', statusFilter.value);
+        if (searchInput.value.trim()) queryParams.append('search', searchInput.value.trim());
+
+        const endpoint = `/admin/customers${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+        const res = await apiFetch(endpoint);
+        if (res && res.data) {
+          customers = res.data;
+        }
+      } catch (err) {
+        console.warn('API error, falling back to cached state:', err.message);
+      }
+      renderCustomers();
+    }
 
     function renderCustomers() {
       const q = searchInput.value.toLowerCase().trim();
       const status = statusFilter.value;
 
       const filtered = customers.filter(c => {
-        const matchesQuery = c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || c.mobile.includes(q);
+        const matchesQuery = (c.name && c.name.toLowerCase().includes(q)) || 
+                             (c.email && c.email.toLowerCase().includes(q)) || 
+                             (c.mobile && c.mobile.includes(q));
         const matchesStatus = status === 'ALL' || c.status === status;
         return matchesQuery && matchesStatus;
       });
@@ -99,13 +113,13 @@
           <td><span class="font-mono text-muted text-sm">#${c.user_id}</span></td>
           <td>
             <div class="font-bold">${escapeHtml(c.name)}</div>
-            <div class="text-muted text-sm">Joined ${c.joined}</div>
+            <div class="text-muted text-sm">Joined ${c.created_at ? new Date(c.created_at).toLocaleDateString() : '—'}</div>
           </td>
           <td>
             <div>${escapeHtml(c.email)}</div>
-            <div class="text-muted text-sm">${escapeHtml(c.mobile)}</div>
+            <div class="text-muted text-sm">${escapeHtml(c.mobile || '—')}</div>
           </td>
-          <td><span class="badge badge-secondary">${c.orders} placed</span></td>
+          <td><span class="badge badge-secondary">${c.total_orders || 0} orders</span></td>
           <td>
             <span class="badge ${c.status === 'Active' ? 'badge-success' : 'badge-danger'}">
               ${c.status}
@@ -123,21 +137,30 @@
       `).join('');
     }
 
-    window.toggleStatus = function(id, newStatus) {
-      const customer = customers.find(c => c.user_id === id);
-      if (!customer) return;
-      customer.status = newStatus;
-      showToast(`Customer account #${id} marked as ${newStatus}`, newStatus === 'Active' ? 'success' : 'warning');
-      renderCustomers();
+    window.toggleStatus = async function(id, newStatus) {
+      try {
+        await apiFetch(`/admin/customers/${id}/status`, {
+          method: 'PUT',
+          body: { status: newStatus }
+        });
+        showToast(`Customer account #${id} marked as ${newStatus}`, newStatus === 'Active' ? 'success' : 'warning');
+        await loadCustomers();
+      } catch (err) {
+        showToast(err.message || 'Failed to update customer status', 'error');
+      }
     };
 
     function escapeHtml(str) {
       return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
-    searchInput.addEventListener('input', renderCustomers);
-    statusFilter.addEventListener('change', renderCustomers);
-    renderCustomers();
+    let searchDebounce;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(loadCustomers, 300);
+    });
+    statusFilter.addEventListener('change', loadCustomers);
+    loadCustomers();
   </script>
 </body>
 </html>
