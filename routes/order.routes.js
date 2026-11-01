@@ -13,6 +13,9 @@ router.post('/', orderController.placeOrder);
 // GET /api/orders/my-orders - Retrieve authenticated customer's order history
 router.get('/my-orders', orderController.getMyOrders);
 
+// GET /api/orders/dashboard/stats - Retrieve metrics and recent orders for dashboard
+router.get('/dashboard/stats', orderController.getCustomerDashboardStats);
+
 // PATCH /api/orders/:id/cancel - Atomically cancel an order and restore stock
 router.patch('/:id/cancel', orderController.cancelOrder);
 
