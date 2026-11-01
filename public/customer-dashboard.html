@@ -120,7 +120,7 @@
             📦
           </div>
           <div>
-            <div class="stat-value" id="stat-total-orders">3</div>
+            <div class="stat-value" id="stat-total-orders">-</div>
             <div class="stat-label">Total Orders</div>
           </div>
         </div>
@@ -130,7 +130,7 @@
             ⏳
           </div>
           <div>
-            <div class="stat-value" id="stat-pending-orders">2</div>
+            <div class="stat-value" id="stat-pending-orders">-</div>
             <div class="stat-label">Active / In-Transit</div>
           </div>
         </div>
@@ -140,7 +140,7 @@
             ✅
           </div>
           <div>
-            <div class="stat-value" id="stat-delivered-orders">1</div>
+            <div class="stat-value" id="stat-delivered-orders">-</div>
             <div class="stat-label">Delivered Orders</div>
           </div>
         </div>
@@ -150,7 +150,7 @@
             💳
           </div>
           <div>
-            <div class="stat-value" id="stat-total-spent">$277.99</div>
+            <div class="stat-value" id="stat-total-spent">$0.00</div>
             <div class="stat-label">Total Purchases</div>
           </div>
         </div>
@@ -158,6 +158,7 @@
 
       <!-- 2-Column Section: Recent Orders & Quick Shortcuts -->
       <div class="grid grid-cols-3 gap-8 items-start">
+
         <!-- Recent Orders (2 Columns wide) -->
         <div style="grid-column: span 2;">
           <div class="card">
@@ -180,33 +181,8 @@
                   </thead>
                   <tbody id="dashboard-recent-orders">
                     <tr>
-                      <td><strong>#ORD-1001</strong></td>
-                      <td class="text-muted">Oct 30, 2026</td>
-                      <td>Pro Wireless Headphones (1)</td>
-                      <td class="font-semibold">$149.99</td>
-                      <td><span class="badge badge-primary">Processing</span></td>
-                      <td class="text-right">
-                        <a href="my-orders.html" class="btn btn-secondary btn-sm">Track</a>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td><strong>#ORD-1002</strong></td>
-                      <td class="text-muted">Oct 29, 2026</td>
-                      <td>Mechanical Keyboard (1)</td>
-                      <td class="font-semibold">$89.50</td>
-                      <td><span class="badge badge-warning">Pending</span></td>
-                      <td class="text-right">
-                        <a href="my-orders.html" class="btn btn-secondary btn-sm">Track</a>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td><strong>#ORD-998</strong></td>
-                      <td class="text-muted">Oct 24, 2026</td>
-                      <td>Clean Code Handbook (1)</td>
-                      <td class="font-semibold">$38.50</td>
-                      <td><span class="badge badge-success">Delivered</span></td>
-                      <td class="text-right">
-                        <a href="my-orders.html" class="btn btn-secondary btn-sm">Details</a>
+                      <td colspan="6" class="text-center py-6 text-muted">
+                        Loading recent orders...
                       </td>
                     </tr>
                   </tbody>
@@ -286,6 +262,88 @@
         nameEl.textContent = currentUser.name.split(' ')[0];
       }
     }
+
+    async function loadDashboardData() {
+      try {
+        const response = await apiFetch('/orders/dashboard/stats');
+        const data = response.data || {};
+        const stats = data.stats || {};
+        const recentOrders = data.recent_orders || [];
+
+        // 1. Update metric counters
+        document.getElementById('stat-total-orders').textContent = stats.total_orders ?? 0;
+        document.getElementById('stat-pending-orders').textContent = stats.active_orders ?? 0;
+        document.getElementById('stat-delivered-orders').textContent = stats.delivered_orders ?? 0;
+        document.getElementById('stat-total-spent').textContent = `$${Number(stats.total_spent || 0).toFixed(2)}`;
+
+        // 2. Render recent orders table
+        const tbody = document.getElementById('dashboard-recent-orders');
+        if (recentOrders.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="6" class="text-center py-8 text-muted" style="font-size: 0.92rem;">
+                No purchase orders placed yet. <a href="products.html" class="font-semibold" style="color: var(--primary);">Explore Store &rarr;</a>
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = recentOrders.map(order => {
+          const badgeClass = getStatusBadgeClass(order.order_status);
+          return `
+            <tr>
+              <td><strong>#ORD-${order.order_id}</strong></td>
+              <td class="text-muted">${formatDate(order.order_date)}</td>
+              <td>${escapeHtml(order.items_summary)}</td>
+              <td class="font-semibold" style="color: var(--neutral-900);">$${Number(order.total_amount).toFixed(2)}</td>
+              <td><span class="badge ${badgeClass}">${order.order_status}</span></td>
+              <td class="text-right">
+                <a href="my-orders.html" class="btn btn-secondary btn-sm">
+                  ${order.order_status === 'Delivered' ? 'Details' : 'Track'}
+                </a>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+      } catch (err) {
+        console.error('Failed to load dashboard data:', err);
+        showToast(err.message || 'Error loading dashboard metrics', 'error');
+      }
+    }
+
+    function getStatusBadgeClass(status) {
+      switch (status) {
+        case 'Pending': return 'badge-warning';
+        case 'Processing': return 'badge-primary';
+        case 'Shipped': return 'badge-primary';
+        case 'Delivered': return 'badge-success';
+        case 'Cancelled': return 'badge-danger';
+        default: return 'badge-neutral';
+      }
+    }
+
+    function formatDate(dtStr) {
+      try {
+        const d = new Date(dtStr);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      } catch (e) {
+        return dtStr;
+      }
+    }
+
+    function escapeHtml(str) {
+      return (str || '').replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+      }[m]));
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (currentUser) {
+        loadDashboardData();
+      }
+    });
   </script>
 </body>
 </html>

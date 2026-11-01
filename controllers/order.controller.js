@@ -371,8 +371,108 @@ async function cancelOrder(req, res, next) {
   }
 }
 
+/**
+ * GET /api/orders/dashboard/stats
+ * Aggregates summary statistics and recent purchase orders for the customer dashboard.
+ */
+async function getCustomerDashboardStats(req, res, next) {
+  try {
+    const customerId = req.user.user_id;
+
+    // 1. Single query for aggregated metric counters
+    const [statsRows] = await pool.query(
+      `SELECT 
+        COUNT(*) AS total_orders,
+        SUM(CASE WHEN order_status IN ('Pending', 'Processing', 'Shipped') THEN 1 ELSE 0 END) AS active_orders,
+        SUM(CASE WHEN order_status = 'Delivered' THEN 1 ELSE 0 END) AS delivered_orders,
+        SUM(CASE WHEN order_status = 'Cancelled' THEN 1 ELSE 0 END) AS cancelled_orders,
+        COALESCE(SUM(CASE WHEN order_status != 'Cancelled' THEN total_amount ELSE 0 END), 0) AS total_spent
+       FROM orders
+       WHERE customer_id = ?`,
+      [customerId]
+    );
+
+    const stats = {
+      total_orders: Number(statsRows[0].total_orders || 0),
+      active_orders: Number(statsRows[0].active_orders || 0),
+      delivered_orders: Number(statsRows[0].delivered_orders || 0),
+      cancelled_orders: Number(statsRows[0].cancelled_orders || 0),
+      total_spent: Number(Number(statsRows[0].total_spent || 0).toFixed(2))
+    };
+
+    // 2. Fetch up to 5 recent orders for this customer
+    const [recentOrders] = await pool.query(
+      `SELECT 
+        order_id,
+        order_date,
+        total_amount,
+        order_status,
+        payment_status
+       FROM orders
+       WHERE customer_id = ?
+       ORDER BY order_id DESC
+       LIMIT 5`,
+      [customerId]
+    );
+
+    // 3. Summarize items for each recent order
+    let recentOrdersWithItems = [];
+    if (recentOrders.length > 0) {
+      const orderIds = recentOrders.map(o => o.order_id);
+      const [items] = await pool.query(
+        `SELECT 
+          oi.order_id,
+          oi.quantity,
+          p.product_name
+         FROM order_items oi
+         JOIN products p ON oi.product_id = p.product_id
+         WHERE oi.order_id IN (?)
+         ORDER BY oi.order_item_id ASC`,
+        [orderIds]
+      );
+
+      const itemsByOrderId = {};
+      items.forEach(item => {
+        if (!itemsByOrderId[item.order_id]) {
+          itemsByOrderId[item.order_id] = [];
+        }
+        itemsByOrderId[item.order_id].push(item);
+      });
+
+      recentOrdersWithItems = recentOrders.map(o => {
+        const orderItems = itemsByOrderId[o.order_id] || [];
+        let itemSummary = 'No items';
+        if (orderItems.length === 1) {
+          itemSummary = `${orderItems[0].product_name} (${orderItems[0].quantity})`;
+        } else if (orderItems.length > 1) {
+          itemSummary = `${orderItems[0].product_name} + ${orderItems.length - 1} more`;
+        }
+
+        return {
+          order_id: o.order_id,
+          order_date: o.order_date,
+          total_amount: Number(o.total_amount),
+          order_status: o.order_status,
+          payment_status: o.payment_status,
+          items_summary: itemSummary
+        };
+      });
+    }
+
+    return sendSuccess(res, 'Dashboard statistics retrieved successfully', {
+      stats,
+      recent_orders: recentOrdersWithItems
+    });
+
+  } catch (error) {
+    console.error('Error fetching customer dashboard stats:', error);
+    return sendError(res, 'Failed to retrieve dashboard statistics.', 500);
+  }
+}
+
 module.exports = {
   placeOrder,
   getMyOrders,
-  cancelOrder
+  cancelOrder,
+  getCustomerDashboardStats
 };
