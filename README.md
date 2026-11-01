@@ -383,3 +383,46 @@ Add `<script src="js/storefront.js"></script>` to any page that needs:
 - `renderProductCard(product)` — full product card HTML
 
 ---
+
+
+## 👤 Day 3: Profile & Reviews API Reference
+
+### 1. Database Migration (Day 3)
+If you already have a running database, apply the non-breaking migration:
+```bash
+mysql -u root -p marketplace_db < database/migrations/day3.sql
+```
+Adds `is_default TINYINT(1) NOT NULL DEFAULT 0` to the `addresses` table.
+
+---
+
+### 2. Profile Endpoints (`/api/profile`)
+All endpoints require the `Authorization: Bearer <token>` header (`authenticate` middleware).
+
+| Method | Endpoint | Access | Description |
+| :--- | :--- | :--- | :--- |
+| **GET** | `/api/profile` | Any Role | Retrieve profile details of authenticated user + saved addresses (Customers only). |
+| **PUT** | `/api/profile` | Any Role | Update name (2-60 chars) and mobile (10 digits). Email/role remain immutable. |
+| **PUT** | `/api/profile/password` | Any Role | Body `{ currentPassword, newPassword }`. Verifies bcrypt hash, enforces 8+ chars and difference from current. |
+| **GET** | `/api/profile/addresses` | Customer | Fetch customer's saved shipping addresses (sorted by default first). |
+| **POST** | `/api/profile/addresses` | Customer | Body `{ address_line, city, state, pincode }`. Validates 6-digit pincode, caps max 5 addresses per account. |
+| **PUT** | `/api/profile/addresses/:id`| Customer | Update existing address belonging to the user (`AND user_id = ?`). |
+| **DELETE**| `/api/profile/addresses/:id`| Customer | Delete an address belonging to the user (`AND user_id = ?`). |
+| **PATCH**| `/api/profile/addresses/:id/default`| Customer | Set specified address as default (clears existing defaults atomically). |
+
+---
+
+### 3. Reviews Endpoints (`/api/reviews`)
+
+| Method | Endpoint | Access | Description |
+| :--- | :--- | :--- | :--- |
+| **GET** | `/api/reviews/product/:productId` | Public | Paginated review list + summary (avg rating, total count, 5-row distribution). Reviewer names formatted for privacy (e.g., "Alex J."). |
+| **GET** | `/api/reviews/can-review/:productId` | Customer | Returns `{ canReview, hasReviewed, review, reason }` based on whether the customer purchased the item. |
+| **POST** | `/api/reviews` | Customer | Body `{ product_id, rating (1-5), comment (<= 500) }`. Requires verified purchase (`orders.order_status != 'Cancelled'`). Returns 409 if already reviewed. |
+| **PUT** | `/api/reviews/:id` | Customer | Edit customer's own review. |
+| **DELETE**| `/api/reviews/:id` | Customer / Admin | Customer can delete their own review. Admins / Super Admins may delete any review for moderation. |
+
+#### Purchase Requirement Rule for Reviews:
+A Customer can only review products that exist in their order history (`orders` joined with `order_items` where `orders.order_status != 'Cancelled'`). Each customer can submit at most 1 review per product (enforced by `UNIQUE KEY (customer_id, product_id)`).
+
+---
