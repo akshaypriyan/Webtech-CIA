@@ -128,35 +128,9 @@
               </div>
               <div class="card-body">
                 <div id="addresses-container">
-                  <!-- Mock Addresses modeled on 'addresses' table schema -->
-                  <label class="address-card selected" onclick="selectAddress(1)">
-                    <input type="radio" name="shipping_address_id" value="1" class="address-radio" checked>
-                    <div style="flex: 1;">
-                      <div class="flex items-center justify-between">
-                        <strong style="color: var(--neutral-900);">Campus Hostel / Primary Residence</strong>
-                        <span class="badge badge-success">Default</span>
-                      </div>
-                      <p style="margin-top: 4px; margin-bottom: 2px; font-size: 0.92rem;">
-                        Flat 402, Royal Residency, 12th Main Road
-                      </p>
-                      <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 0;">
-                        Bengaluru, Karnataka &bull; PIN: 560029
-                      </p>
-                    </div>
-                  </label>
-
-                  <label class="address-card" onclick="selectAddress(2)">
-                    <input type="radio" name="shipping_address_id" value="2" class="address-radio">
-                    <div style="flex: 1;">
-                      <strong style="color: var(--neutral-900);">Home / Family Address</strong>
-                      <p style="margin-top: 4px; margin-bottom: 2px; font-size: 0.92rem;">
-                        #88 Green Meadows, Sector 4
-                      </p>
-                      <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 0;">
-                        Mumbai, Maharashtra &bull; PIN: 400001
-                      </p>
-                    </div>
-                  </label>
+                  <div class="text-center py-4 text-muted" style="font-size: 0.9rem;">
+                    Loading your saved addresses...
+                  </div>
                 </div>
 
                 <!-- Add New Address Toggle -->
@@ -372,12 +346,65 @@
       }
     }
 
+    let savedAddresses = [];
+
+    async function loadSavedAddresses() {
+      const container = document.getElementById('addresses-container');
+      const form = document.getElementById('new-address-form');
+
+      try {
+        const response = await apiFetch('/addresses');
+        savedAddresses = response.data || [];
+
+        if (savedAddresses.length === 0) {
+          container.innerHTML = `
+            <div class="alert alert-info" style="font-size: 0.88rem; margin-bottom: var(--space-3);">
+              <span>You don't have any saved shipping addresses yet. Please fill in your address details below.</span>
+            </div>
+          `;
+          // Automatically display the address form if no address exists
+          form.style.display = 'block';
+          return;
+        }
+
+        // Render live user addresses from the database
+        container.innerHTML = savedAddresses.map((addr, idx) => `
+          <label class="address-card ${idx === 0 ? 'selected' : ''}" onclick="selectAddress(${addr.address_id})">
+            <input type="radio" name="shipping_address_id" value="${addr.address_id}" class="address-radio" ${idx === 0 ? 'checked' : ''}>
+            <div style="flex: 1;">
+              <div class="flex items-center justify-between">
+                <strong style="color: var(--neutral-900);">Shipping Address #${addr.address_id}</strong>
+                ${idx === 0 ? '<span class="badge badge-success">Latest</span>' : ''}
+              </div>
+              <p style="margin-top: 4px; margin-bottom: 2px; font-size: 0.92rem;">
+                ${escapeHtml(addr.address_line)}
+              </p>
+              <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 0;">
+                ${escapeHtml(addr.city)}, ${escapeHtml(addr.state)} &bull; PIN: ${escapeHtml(addr.pincode)}
+              </p>
+            </div>
+          </label>
+        `).join('');
+
+        // Ensure form is collapsed if address exists
+        form.style.display = 'none';
+
+      } catch (err) {
+        console.error('Failed to load addresses:', err);
+        container.innerHTML = `
+          <div class="alert alert-danger" style="font-size: 0.88rem;">
+            <span>Failed to load addresses: ${escapeHtml(err.message || 'Server error')}</span>
+          </div>
+        `;
+      }
+    }
+
     function toggleNewAddressForm() {
       const form = document.getElementById('new-address-form');
       form.style.display = form.style.display === 'none' ? 'block' : 'none';
     }
 
-    function saveNewAddress() {
+    async function saveNewAddress() {
       const line = document.getElementById('new-address-line').value.trim();
       const city = document.getElementById('new-city').value.trim();
       const state = document.getElementById('new-state').value.trim();
@@ -388,37 +415,43 @@
         return;
       }
 
-      const container = document.getElementById('addresses-container');
-      const newId = Date.now();
-      const newAddressHtml = `
-        <label class="address-card selected" onclick="selectAddress(${newId})">
-          <input type="radio" name="shipping_address_id" value="${newId}" class="address-radio" checked>
-          <div style="flex: 1;">
-            <div class="flex items-center justify-between">
-              <strong style="color: var(--neutral-900);">Newly Added Address</strong>
-              <span class="badge badge-primary">New</span>
-            </div>
-            <p style="margin-top: 4px; margin-bottom: 2px; font-size: 0.92rem;">${escapeHtml(line)}</p>
-            <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 0;">
-              ${escapeHtml(city)}, ${escapeHtml(state)} &bull; PIN: ${escapeHtml(pincode)}
-            </p>
-          </div>
-        </label>
-      `;
+      const saveBtn = document.querySelector('#new-address-form button[type="button"]');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving Address...';
+      }
 
-      // Deselect existing
-      document.querySelectorAll('.address-card').forEach(c => c.classList.remove('selected'));
-      container.insertAdjacentHTML('afterbegin', newAddressHtml);
-      selectAddress(newId);
+      try {
+        const response = await apiFetch('/addresses', {
+          method: 'POST',
+          body: {
+            address_line: line,
+            city: city,
+            state: state,
+            pincode: pincode
+          }
+        });
 
-      // Reset form
-      document.getElementById('new-address-line').value = '';
-      document.getElementById('new-city').value = '';
-      document.getElementById('new-state').value = '';
-      document.getElementById('new-pincode').value = '';
-      toggleNewAddressForm();
+        showToast(response.message || 'Address saved successfully to your account!', 'success', 3000);
 
-      showToast('Address added successfully!', 'success');
+        // Reset form inputs
+        document.getElementById('new-address-line').value = '';
+        document.getElementById('new-city').value = '';
+        document.getElementById('new-state').value = '';
+        document.getElementById('new-pincode').value = '';
+
+        // Reload addresses from MySQL and select the newly added one
+        await loadSavedAddresses();
+
+      } catch (err) {
+        console.error('Failed to save address:', err);
+        showToast(err.message || 'Failed to save address.', 'error');
+      } finally {
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save & Use This Address';
+        }
+      }
     }
 
     function getSelectedShippingAddress() {
@@ -432,7 +465,7 @@
       return lines.join(', ');
     }
 
-    function handlePlaceOrder(e) {
+    async function handlePlaceOrder(e) {
       e.preventDefault();
 
       if (!checkoutCart || !checkoutCart.items || checkoutCart.items.length === 0) {
@@ -448,16 +481,27 @@
 
       const btn = document.getElementById('place-order-btn');
       btn.disabled = true;
-      btn.textContent = 'Validating Stock & Price...';
+      btn.textContent = 'Processing Order...';
 
-      showToast('Step 2.3 Verified: Server pricing & address confirmed!', 'success', 2000);
+      try {
+        const response = await apiFetch('/orders', {
+          method: 'POST',
+          body: { shipping_address: address }
+        });
 
-      // Day 3 will replace this simulation with the transactional POST /api/orders
-      setTimeout(() => {
-        showToast('Day 2 Milestone complete! Ready for Day 3 Transactional Orders.', 'info', 3000);
+        showToast('Order placed successfully! Redirecting...', 'success', 2000);
+
+        // Redirect to My Orders page with success query parameter
+        setTimeout(() => {
+          window.location.href = 'my-orders.html?orderPlaced=true';
+        }, 1200);
+
+      } catch (err) {
+        console.error('Failed to place order:', err);
+        showToast(err.message || 'Failed to place order. Please try again.', 'error', 4000);
         btn.disabled = false;
         btn.textContent = 'Confirm & Place Order';
-      }, 1500);
+      }
     }
 
     function escapeHtml(str) {
@@ -466,10 +510,11 @@
       }[m]));
     }
 
-    // Initialize checkout data on DOM ready
+    // Initialize checkout and address data on DOM ready
     document.addEventListener('DOMContentLoaded', () => {
       if (currentUser) {
         loadCheckoutData();
+        loadSavedAddresses();
       }
     });
   </script>

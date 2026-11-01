@@ -199,79 +199,51 @@
     // Route guard: only Customer can access
     const currentUser = typeof requireRole === 'function' ? requireRole('Customer') : null;
 
-    // Day 1 Mock Orders Data matching schema: orders & order_items
-    let mockOrders = [
-      {
-        order_id: 1001,
-        order_date: "2026-10-30 18:24:00",
-        total_amount: 149.99,
-        shipping_address: "Flat 402, Royal Residency, Bengaluru, Karnataka - 560029",
-        order_status: "Processing",
-        payment_status: "Paid",
-        items: [
-          {
-            product_name: "Pro Wireless Noise-Cancelling Headphones",
-            seller_name: "AudioTech Official",
-            quantity: 1,
-            price: 149.99,
-            subtotal: 149.99
-          }
-        ]
-      },
-      {
-        order_id: 1002,
-        order_date: "2026-10-29 14:10:00",
-        total_amount: 89.50,
-        shipping_address: "Flat 402, Royal Residency, Bengaluru, Karnataka - 560029",
-        order_status: "Pending",
-        payment_status: "Pending",
-        items: [
-          {
-            product_name: "Custom Mechanical RGB Gaming Keyboard",
-            seller_name: "KeyPro Studios",
-            quantity: 1,
-            price: 89.50,
-            subtotal: 89.50
-          }
-        ]
-      },
-      {
-        order_id: 998,
-        order_date: "2026-10-24 11:05:00",
-        total_amount: 38.50,
-        shipping_address: "#88 Green Meadows, Sector 4, Mumbai, Maharashtra - 400001",
-        order_status: "Delivered",
-        payment_status: "Paid",
-        items: [
-          {
-            product_name: "Clean Code: Handbook of Software Craftsmanship",
-            seller_name: "BookWorm Central",
-            quantity: 1,
-            price: 38.50,
-            subtotal: 38.50
-          }
-        ]
-      }
-    ];
-
+    let customerOrders = [];
     let currentFilter = 'All';
+
+    async function loadCustomerOrders() {
+      const container = document.getElementById('orders-container');
+      const emptyState = document.getElementById('empty-orders-state');
+
+      try {
+        container.innerHTML = `
+          <div class="text-center py-12 text-muted" style="font-size: 0.95rem;">
+            Loading your orders...
+          </div>
+        `;
+        emptyState.style.display = 'none';
+
+        const response = await apiFetch('/orders/my-orders');
+        customerOrders = response.data || [];
+        renderOrders();
+      } catch (err) {
+        console.error('Failed to load orders:', err);
+        container.innerHTML = `
+          <div class="alert alert-danger" style="margin-bottom: var(--space-4);">
+            <span>Failed to load orders: ${escapeHtml(err.message || 'Server error')}</span>
+          </div>
+        `;
+        showToast(err.message || 'Error connecting to orders service', 'error');
+      }
+    }
 
     function renderOrders() {
       const container = document.getElementById('orders-container');
       const emptyState = document.getElementById('empty-orders-state');
 
-      const filtered = mockOrders.filter(o => {
+      const filtered = customerOrders.filter(o => {
         if (currentFilter === 'All') return true;
         return o.order_status === currentFilter;
       });
 
       // Update counters
-      document.getElementById('count-all').textContent = mockOrders.length;
-      document.getElementById('count-pending').textContent = mockOrders.filter(o => o.order_status === 'Pending').length;
-      document.getElementById('count-processing').textContent = mockOrders.filter(o => o.order_status === 'Processing').length;
-      document.getElementById('count-shipped').textContent = mockOrders.filter(o => o.order_status === 'Shipped').length;
-      document.getElementById('count-delivered').textContent = mockOrders.filter(o => o.order_status === 'Delivered').length;
-      document.getElementById('count-cancelled').textContent = mockOrders.filter(o => o.order_status === 'Cancelled').length;
+      document.getElementById('count-all').textContent = customerOrders.length;
+      document.getElementById('count-pending').textContent = customerOrders.filter(o => o.order_status === 'Pending').length;
+      document.getElementById('count-processing').textContent = customerOrders.filter(o => o.order_status === 'Processing').length;
+      document.getElementById('count-shipped').textContent = customerOrders.filter(o => o.order_status === 'Shipped').length;
+      document.getElementById('count-delivered').textContent = customerOrders.filter(o => o.order_status === 'Delivered').length;
+      document.getElementById('count-cancelled').textContent = customerOrders.filter(o => o.order_status === 'Cancelled').length;
 
       if (filtered.length === 0) {
         container.innerHTML = '';
@@ -315,7 +287,7 @@
                   ${order.order_status}
                 </span>
                 ${isCancellable ? `
-                  <button class="btn btn-danger btn-sm" onclick="cancelOrder(${order.order_id})">
+                  <button class="btn btn-danger btn-sm" onclick="cancelOrder(${order.order_id}, this)">
                     Cancel Order
                   </button>
                 ` : `
@@ -414,8 +386,8 @@
       }
     }
 
-    function cancelOrder(orderId) {
-      const order = mockOrders.find(o => o.order_id === orderId);
+    async function cancelOrder(orderId, btnElement) {
+      const order = customerOrders.find(o => o.order_id === orderId);
       if (!order) return;
 
       if (!['Pending', 'Processing'].includes(order.order_status)) {
@@ -423,11 +395,30 @@
         return;
       }
 
-      if (confirm(`Are you sure you want to cancel Order #ORD-${orderId}? Stock will be replenished.`)) {
-        order.order_status = 'Cancelled';
-        order.payment_status = 'Refunded';
-        renderOrders();
-        showToast(`Order #ORD-${orderId} has been successfully cancelled.`, 'success');
+      const confirmed = confirm(`Are you sure you want to cancel Order #ORD-${orderId}? Purchased items will be restored to inventory and payment will be refunded.`);
+      if (!confirmed) return;
+
+      let originalBtnText = '';
+      if (btnElement) {
+        originalBtnText = btnElement.textContent;
+        btnElement.disabled = true;
+        btnElement.textContent = 'Cancelling...';
+      }
+
+      try {
+        const response = await apiFetch(`/orders/${orderId}/cancel`, {
+          method: 'PATCH'
+        });
+
+        showToast(response.message || `Order #ORD-${orderId} has been successfully cancelled.`, 'success', 3500);
+        await loadCustomerOrders();
+      } catch (err) {
+        console.error('Failed to cancel order:', err);
+        showToast(err.message || 'Failed to cancel order.', 'error');
+        if (btnElement) {
+          btnElement.disabled = false;
+          btnElement.textContent = originalBtnText;
+        }
       }
     }
 
@@ -460,7 +451,9 @@
       if (params.get('orderPlaced') === 'true') {
         showToast('🎉 Your new order was placed successfully!', 'success', 4000);
       }
-      renderOrders();
+      if (currentUser) {
+        loadCustomerOrders();
+      }
     });
   </script>
 </body>
