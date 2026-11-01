@@ -103,15 +103,25 @@
         <!-- ================================================ -->
         <!-- Reviews Section Placeholder (Day 3)             -->
         <!-- ================================================ -->
-        <section class="sf-reviews-section mt-12">
-          <h2>Customer Reviews</h2>
-          <div class="sf-reviews-placeholder">
-            <div style="font-size:2rem;">📝</div>
-            <p class="text-muted">
-              Reviews and ratings will be available in the next release.
-              <!-- TODO: Wire up GET /api/reviews?product_id=:id (Day 3, Person 1) -->
-            </p>
+        <!-- ================================================ -->
+        <!-- Customer Reviews Section (Day 3)                 -->
+        <!-- ================================================ -->
+        <section class="sf-reviews-section mt-12" id="customer-reviews-section">
+          <div class="flex items-center justify-between mb-6 flex-wrap gap-2">
+            <h2>Customer Reviews</h2>
           </div>
+
+          <!-- Rating Summary (Average + 5-row distribution bars) -->
+          <div id="rating-summary-container"></div>
+
+          <!-- Review Form State (Form, already reviewed card, or eligibility notice) -->
+          <div id="review-form-state-container"></div>
+
+          <!-- Reviews List -->
+          <div id="reviews-list-container"></div>
+
+          <!-- Reviews Pagination -->
+          <div id="reviews-pagination-container"></div>
         </section>
 
       </div><!-- /#detail-content -->
@@ -142,6 +152,7 @@
   <script src="js/api.js"></script>
   <script src="js/navbar.js"></script>
   <script src="js/storefront.js"></script>
+  <script src="js/product-details.js"></script>
   <script>
     /* ============================================================
      * product-details.html — Page Script
@@ -252,6 +263,7 @@
       // Show the content section
       document.getElementById('detail-loading').style.display = 'none';
       document.getElementById('detail-content').style.display  = 'block';
+      if (typeof initReviews === 'function') { initReviews(productId); }
     }
 
     /* ---- Add to Cart button logic ---- */

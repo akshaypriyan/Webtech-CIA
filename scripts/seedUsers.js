@@ -279,6 +279,68 @@ async function seedDatabase() {
       }
     }
 
+    // 5. Seed Sample Customer Address, Order & Review for Day 3 Demonstration
+    console.log('\n Verifying Sample Orders and Reviews for Customer...');
+    const customerId = userMap['Customer'];
+
+    // Check customer address
+    const [existingAddrs] = await connection.execute(
+      'SELECT address_id FROM addresses WHERE user_id = ?',
+      [customerId]
+    );
+    if (existingAddrs.length === 0) {
+      await connection.execute(
+        `INSERT INTO addresses (user_id, address_line, city, state, pincode, is_default)
+         VALUES (?, '42 Innovation Parkway, Tech Enclave', 'Bengaluru', 'Karnataka', '560001', 1)`,
+        [customerId]
+      );
+      console.log('   + Created default shipping address for customer');
+    }
+
+    // Check customer sample order (status = Delivered)
+    const [existingOrders] = await connection.execute(
+      'SELECT order_id FROM orders WHERE customer_id = ? LIMIT 1',
+      [customerId]
+    );
+
+    let orderId;
+    if (existingOrders.length === 0) {
+      const [orderResult] = await connection.execute(
+        `INSERT INTO orders (customer_id, total_amount, shipping_address, order_status, payment_status)
+         VALUES (?, 239.49, '42 Innovation Parkway, Tech Enclave, Bengaluru, Karnataka 560001', 'Delivered', 'Paid')`,
+        [customerId]
+      );
+      orderId = orderResult.insertId;
+
+      // Add order items for Product 1 (Headphones) and Product 2 (RGB Keyboard)
+      await connection.execute(
+        `INSERT INTO order_items (order_id, product_id, seller_id, quantity, price, subtotal, item_status)
+         VALUES (?, 1, ?, 1, 149.99, 149.99, 'Delivered'),
+                (?, 2, ?, 1, 89.50, 89.50, 'Delivered')`,
+        [orderId, sellerId, orderId, sellerId]
+      );
+      console.log('   + Created sample delivered order for customer (Products #1 and #2)');
+    } else {
+      orderId = existingOrders[0].order_id;
+      console.log('   * Customer sample order exists (ID: ' + orderId + ')');
+    }
+
+    // Seed Sample Review for Product 1
+    const [existingReviews] = await connection.execute(
+      'SELECT review_id FROM reviews WHERE customer_id = ? AND product_id = 1',
+      [customerId]
+    );
+    if (existingReviews.length === 0) {
+      await connection.execute(
+        `INSERT INTO reviews (customer_id, product_id, rating, comment)
+         VALUES (?, 1, 5, 'Outstanding sound quality and battery life! The noise cancellation easily blocks office background noise.')`,
+        [customerId]
+      );
+      console.log('   + Created verified 5-star review for Product #1');
+    } else {
+      console.log('   * Review for Product #1 exists');
+    }
+
     // 5. Insert system audit log entry
     await connection.execute(
       `INSERT INTO system_logs (user_id, action, description, ip_address)

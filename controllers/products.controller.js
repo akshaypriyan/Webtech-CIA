@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================
  * Products Controller — Public Storefront API
  * ============================================================
@@ -25,14 +25,15 @@ const asyncHandler = fn => (req, res, next) => Promise.resolve(fn(req, res, next
 // ----------------------------------------------------------------
 // VALID SORT OPTIONS — used for allow-list validation
 // ----------------------------------------------------------------
-const VALID_SORTS = ['newest', 'price_asc', 'price_desc', 'name'];
+const VALID_SORTS = ['newest', 'price_asc', 'price_desc', 'name', 'rating'];
 
 // Map sort keyword → SQL ORDER BY clause (safe: values are hard-coded)
 const SORT_MAP = {
   newest:     'p.created_at DESC',
   price_asc:  'p.price ASC',
   price_desc: 'p.price DESC',
-  name:       'p.product_name ASC'
+  name:       'p.product_name ASC',
+  rating:     'avg_rating DESC'
 };
 
 // ================================================================

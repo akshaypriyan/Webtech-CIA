@@ -64,6 +64,7 @@
         <li><a href="seller-products.html" class="nav-link ${isActive('seller-products.html')}">My Products</a></li>
         <li><a href="seller-orders.html" class="nav-link ${isActive('seller-orders.html')}">Orders</a></li>
         <li><a href="seller-reports.html" class="nav-link ${isActive('seller-reports.html')}">Reports</a></li>
+        <li><a href="profile.html" class="nav-link ${isActive('profile.html')}">Profile</a></li>
       `;
 
       authSectionHtml = `
@@ -85,6 +86,7 @@
         <li><a href="manage-sellers.html" class="nav-link ${isActive('manage-sellers.html')}">Sellers</a></li>
         <li><a href="manage-products.html" class="nav-link ${isActive('manage-products.html')}">Products</a></li>
         <li><a href="manage-categories.html" class="nav-link ${isActive('manage-categories.html')}">Categories</a></li>
+        <li><a href="profile.html" class="nav-link ${isActive('profile.html')}">Profile</a></li>
       `;
 
       authSectionHtml = `
@@ -105,6 +107,7 @@
         <li><a href="manage-admins.html" class="nav-link ${isActive('manage-admins.html')}">Manage Admins</a></li>
         <li><a href="system-logs.html" class="nav-link ${isActive('system-logs.html')}">System Logs</a></li>
         <li><a href="system-settings.html" class="nav-link ${isActive('system-settings.html')}">Settings</a></li>
+        <li><a href="profile.html" class="nav-link ${isActive('profile.html')}">Profile</a></li>
       `;
 
       authSectionHtml = `

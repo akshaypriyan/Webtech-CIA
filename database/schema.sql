@@ -1,4 +1,5 @@
--- =====================================================================
+-- =========================
+  is_default TINYINT(1) NOT NULL DEFAULT 0,============================================
 -- Online Marketplace Web Application - Database Schema
 -- Multi-Role Relational Schema (11 Tables, InnoDB, utf8mb4)
 -- =====================================================================

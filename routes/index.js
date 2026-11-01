@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const router = express.Router();
 
 const authRoutes = require('./auth.routes');
@@ -25,30 +25,30 @@ router.use('/auth', authRoutes);
 
 // Person 1: Storefront, Products, Profiles & Reviews
 const productRoutes = require('./products.routes');
-// const profileRoutes = require('./profile.routes');
-// const reviewRoutes = require('./review.routes');
+const profileRoutes = require('./profile.routes');  // Day 3 - P1
+const reviewRoutes  = require('./reviews.routes');  // Day 3 - P1
 router.use('/products', productRoutes);
-// router.use('/profile', profileRoutes);
-// router.use('/reviews', reviewRoutes);
+router.use('/profile',  profileRoutes);
+router.use('/reviews',  reviewRoutes);
 
 // Person 2: Shopping Cart, Checkout & Orders
-const cartRoutes = require('./cart.routes');
-const orderRoutes = require('./order.routes');
+const cartRoutes    = require('./cart.routes');
+const orderRoutes   = require('./order.routes');
 const addressRoutes = require('./address.routes');
-router.use('/cart', cartRoutes);
-router.use('/orders', orderRoutes);
+router.use('/cart',      cartRoutes);
+router.use('/orders',    orderRoutes);
 router.use('/addresses', addressRoutes);
 
 // Person 3: Seller Portal & Fulfillment
- const sellerProductRoutes = require('./sellerProducts');
- router.use('/seller/products', sellerProductRoutes);
+const sellerProductRoutes = require('./sellerProducts');
+router.use('/seller/products', sellerProductRoutes);
 
 // Person 4: Governance, Categories & Administration
-const categoryRoutes = require('./category.routes');
-router.use('/categories', categoryRoutes);
-const adminRoutes = require('./admin.routes');
-router.use('/admin', adminRoutes);
+const categoryRoutes   = require('./category.routes');
+const adminRoutes      = require('./admin.routes');
 const superadminRoutes = require('./superadmin.routes');
+router.use('/categories', categoryRoutes);
+router.use('/admin',      adminRoutes);
 router.use('/superadmin', superadminRoutes);
 
 module.exports = router;
