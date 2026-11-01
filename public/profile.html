@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Manage your personal profile, addresses, and password on MarketHub.">
+  <title>My Profile - MarketHub</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Dynamic Shared Navbar -->
+  <div id="navbar"></div>
+
+  <main class="py-8">
+    <div class="container" style="max-width: 860px;">
+      
+      <!-- Page Header -->
+      <div class="mb-6 flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h1 class="mb-1" style="font-size: 2rem;">My Profile</h1>
+          <p class="text-muted" style="margin: 0;">Manage your personal account details, shipping addresses, and security.</p>
+        </div>
+        <div id="role-badge-container">
+          <!-- Role pill populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Main Profile Stack -->
+      <div class="profile-layout-stack">
+
+        <!-- ========================================== -->
+        <!-- SECTION 1: Personal Account Details        -->
+        <!-- ========================================== -->
+        <div class="card mb-6">
+          <div class="card-header flex items-center justify-between">
+            <h3 class="mb-0">👤 Personal Details</h3>
+            <span class="text-muted" style="font-size: 0.85rem;" id="user-status-text">Status: Active</span>
+          </div>
+          <div class="card-body">
+            <form id="profile-details-form" novalidate>
+              <div class="grid grid-cols-2 gap-4">
+                
+                <!-- Email (Read-only) -->
+                <div class="form-group">
+                  <label for="profile-email" class="form-label">Email Address</label>
+                  <input 
+                    type="email" 
+                    id="profile-email" 
+                    class="form-input" 
+                    readonly 
+                    disabled 
+                    style="background: var(--neutral-100); cursor: not-allowed;"
+                  >
+                  <span class="text-muted" style="font-size: 0.78rem; margin-top: 4px; display: block;">
+                    Email cannot be changed after registration.
+                  </span>
+                </div>
+
+                <!-- Role (Read-only) -->
+                <div class="form-group">
+                  <label for="profile-role" class="form-label">Account Role</label>
+                  <input 
+                    type="text" 
+                    id="profile-role" 
+                    class="form-input" 
+                    readonly 
+                    disabled 
+                    style="background: var(--neutral-100); cursor: not-allowed;"
+                  >
+                </div>
+
+                <!-- Full Name (Editable) -->
+                <div class="form-group">
+                  <label for="profile-name" class="form-label">
+                    Full Name <span class="required">*</span>
+                  </label>
+                  <input 
+                    type="text" 
+                    id="profile-name" 
+                    class="form-input" 
+                    placeholder="Your full name" 
+                    required 
+                    minlength="2" 
+                    maxlength="60"
+                  >
+                  <span class="form-error" id="profile-name-error"></span>
+                </div>
+
+                <!-- Mobile (Editable) -->
+                <div class="form-group">
+                  <label for="profile-mobile" class="form-label">
+                    Mobile Number (10 Digits) <span class="required">*</span>
+                  </label>
+                  <input 
+                    type="tel" 
+                    id="profile-mobile" 
+                    class="form-input" 
+                    placeholder="10-digit mobile number" 
+                    maxlength="10" 
+                    required
+                  >
+                  <span class="form-error" id="profile-mobile-error"></span>
+                </div>
+
+              </div>
+
+              <div class="mt-4 flex justify-end">
+                <button type="submit" id="save-profile-btn" class="btn btn-primary">
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- SECTION 2: Change Password                 -->
+        <!-- ========================================== -->
+        <div class="card mb-6">
+          <div class="card-header">
+            <h3 class="mb-0">🔒 Change Password</h3>
+          </div>
+          <div class="card-body">
+            <form id="profile-password-form" novalidate>
+              
+              <!-- Current Password -->
+              <div class="form-group">
+                <label for="current-password" class="form-label">
+                  Current Password <span class="required">*</span>
+                </label>
+                <div class="input-wrapper">
+                  <input 
+                    type="password" 
+                    id="current-password" 
+                    class="form-input" 
+                    placeholder="Enter current password" 
+                    required
+                  >
+                  <button 
+                    type="button" 
+                    class="toggle-password-btn" 
+                    data-target="current-password"
+                    aria-label="Toggle password visibility"
+                  >Show</button>
+                </div>
+                <span class="form-error" id="current-password-error"></span>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <!-- New Password -->
+                <div class="form-group">
+                  <label for="new-password" class="form-label">
+                    New Password (Min. 8 chars) <span class="required">*</span>
+                  </label>
+                  <div class="input-wrapper">
+                    <input 
+                      type="password" 
+                      id="new-password" 
+                      class="form-input" 
+                      placeholder="At least 8 characters" 
+                      minlength="8" 
+                      required
+                    >
+                    <button 
+                      type="button" 
+                      class="toggle-password-btn" 
+                      data-target="new-password"
+                      aria-label="Toggle password visibility"
+                    >Show</button>
+                  </div>
+                  <span class="form-error" id="new-password-error"></span>
+                </div>
+
+                <!-- Confirm New Password -->
+                <div class="form-group">
+                  <label for="confirm-password" class="form-label">
+                    Confirm New Password <span class="required">*</span>
+                  </label>
+                  <div class="input-wrapper">
+                    <input 
+                      type="password" 
+                      id="confirm-password" 
+                      class="form-input" 
+                      placeholder="Re-type new password" 
+                      required
+                    >
+                    <button 
+                      type="button" 
+                      class="toggle-password-btn" 
+                      data-target="confirm-password"
+                      aria-label="Toggle password visibility"
+                    >Show</button>
+                  </div>
+                  <span class="form-error" id="confirm-password-error"></span>
+                </div>
+              </div>
+
+              <div class="mt-4 flex justify-end">
+                <button type="submit" id="change-password-btn" class="btn btn-secondary">
+                  Update Password
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- SECTION 3: Shipping Addresses (Customer)   -->
+        <!-- ========================================== -->
+        <div class="card mb-6" id="addresses-section" style="display: none;">
+          <div class="card-header flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h3 class="mb-0">📍 My Shipping Addresses</h3>
+              <p class="text-muted" style="font-size: 0.85rem; margin: 0;">
+                Saved addresses for faster checkout (Max 5 addresses)
+              </p>
+            </div>
+            <button 
+              type="button" 
+              id="toggle-add-address-btn" 
+              class="btn btn-primary btn-sm"
+            >
+              + Add New Address
+            </button>
+          </div>
+          
+          <div class="card-body">
+            
+            <!-- Address Form (Add / Edit) -->
+            <div id="address-form-container" style="display: none; margin-bottom: var(--space-6);" class="p-4 border rounded bg-light">
+              <h4 id="address-form-title" class="mb-3">Add Shipping Address</h4>
+              <form id="address-crud-form" novalidate>
+                <input type="hidden" id="edit-address-id" value="">
+
+                <div class="form-group mb-3">
+                  <label for="addr-line" class="form-label">
+                    Street Address / House No. / Landmark <span class="required">*</span>
+                  </label>
+                  <input 
+                    type="text" 
+                    id="addr-line" 
+                    class="form-input" 
+                    placeholder="e.g. 124 Market Road, Apt 4B" 
+                    required
+                  >
+                  <span class="form-error" id="addr-line-error"></span>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3 mb-3">
+                  <div class="form-group">
+                    <label for="addr-city" class="form-label">
+                      City <span class="required">*</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      id="addr-city" 
+                      class="form-input" 
+                      placeholder="e.g. Mumbai" 
+                      required
+                    >
+                    <span class="form-error" id="addr-city-error"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="addr-state" class="form-label">
+                      State <span class="required">*</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      id="addr-state" 
+                      class="form-input" 
+                      placeholder="e.g. Maharashtra" 
+                      required
+                    >
+                    <span class="form-error" id="addr-state-error"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="addr-pincode" class="form-label">
+                      PIN Code (6 Digits) <span class="required">*</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      id="addr-pincode" 
+                      class="form-input" 
+                      placeholder="e.g. 400001" 
+                      maxlength="6" 
+                      required
+                    >
+                    <span class="form-error" id="addr-pincode-error"></span>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-3">
+                  <button type="button" id="cancel-address-btn" class="btn btn-outline btn-sm">
+                    Cancel
+                  </button>
+                  <button type="submit" id="save-address-btn" class="btn btn-primary btn-sm">
+                    Save Address
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Addresses List Container -->
+            <div id="addresses-list-container">
+              <div class="text-center py-6 text-muted">
+                Loading saved addresses...
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="js/api.js"></script>
+  <script src="js/navbar.js"></script>
+  <script src="js/storefront.js"></script>
+  <script src="js/profile.js"></script>
+</body>
+</html>

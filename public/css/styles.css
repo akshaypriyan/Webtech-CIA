@@ -1319,3 +1319,88 @@ p {
   .sf-detail-name  { font-size: 1.35rem; }
   .sf-detail-price { font-size: 1.5rem; }
 }
+
+
+/* ============================================================
+   DAY 3 — Profile Page & Reviews Styles
+   ============================================================ */
+
+/* Profile Page Layout */
+.profile-layout-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.user-role-pill {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Address Cards & Grid */
+.address-card {
+  transition: all var(--transition-fast);
+  border: 1.5px solid var(--border-subtle);
+}
+
+.address-card:hover {
+  border-color: var(--neutral-400);
+  box-shadow: var(--shadow-sm);
+}
+
+.address-card.border-primary {
+  border-color: var(--primary) !important;
+  background: var(--primary-light) !important;
+}
+
+/* Rating Summary & Distribution */
+.rating-summary-card {
+  box-shadow: var(--shadow-xs);
+}
+
+.dist-bar-track {
+  position: relative;
+}
+
+.dist-bar-fill {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24) !important;
+}
+
+/* Review Cards */
+.review-item-card {
+  border: 1px solid var(--border-subtle);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.review-item-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Interactive Star Rating Selector */
+.star-select-btn:hover {
+  transform: scale(1.25);
+}
+
+.star-select-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  border-radius: var(--radius-xs);
+}
+
+/* Responsive Overrides */
+@media (max-width: 768px) {
+  .rating-summary-card .grid {
+    grid-template-columns: 1fr !important;
+  }
+  .rating-summary-card .text-center {
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-right: 0 !important;
+    padding-bottom: var(--space-4);
+    margin-bottom: var(--space-4);
+  }
+}
