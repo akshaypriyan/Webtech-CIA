@@ -31,11 +31,13 @@ router.use('/products', productRoutes);
 // router.use('/profile', profileRoutes);
 // router.use('/reviews', reviewRoutes);
 
-// Person 2: Shopping Cart & Orders
+// Person 2: Shopping Cart, Checkout & Orders
 const cartRoutes = require('./cart.routes');
-// const orderRoutes = require('./order.routes');
+const orderRoutes = require('./order.routes');
+const addressRoutes = require('./address.routes');
 router.use('/cart', cartRoutes);
-// router.use('/orders', orderRoutes);
+router.use('/orders', orderRoutes);
+router.use('/addresses', addressRoutes);
 
 // Person 3: Seller Portal & Fulfillment
  const sellerProductRoutes = require('./sellerProducts');
