@@ -532,6 +532,45 @@ async function updateSettings(req, res, next) {
   }
 }
 
+/**
+ * @desc    Get high-privilege system statistics and recent security events for super admin console
+ * @route   GET /api/superadmin/stats
+ * @access  Private (Super Admin)
+ */
+async function getSuperAdminStats(req, res, next) {
+  try {
+    const [[adminsCount]] = await pool.execute('SELECT COUNT(*) as count FROM users WHERE role = "Admin" AND status = "Active"');
+    const [[logsCount]] = await pool.execute('SELECT COUNT(*) as count FROM system_logs');
+    const [[usersCount]] = await pool.execute('SELECT COUNT(*) as count FROM users');
+
+    // Fetch top 5 recent critical security and governance logs
+    const [recentLogs] = await pool.execute(`
+      SELECT 
+        l.log_id,
+        l.action,
+        l.description,
+        l.ip_address,
+        l.created_at,
+        u.email AS user_email
+      FROM system_logs l
+      LEFT JOIN users u ON l.user_id = u.user_id
+      ORDER BY l.log_id DESC
+      LIMIT 5
+    `);
+
+    return sendSuccess(res, 'Super admin console metrics retrieved', {
+      active_admins: adminsCount.count,
+      total_logs: logsCount.count,
+      total_users: usersCount.count,
+      system_status: 'Healthy',
+      db_status: 'Connected',
+      recent_events: recentLogs
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   getAdmins,
   createAdmin,
@@ -541,5 +580,6 @@ module.exports = {
   updateAdminPermissions,
   getSystemLogs,
   getSettings,
-  updateSettings
+  updateSettings,
+  getSuperAdminStats
 };

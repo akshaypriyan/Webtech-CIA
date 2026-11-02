@@ -12,10 +12,12 @@ router.use(authorizeRoles('Admin', 'Super Admin'));
 router.use(auditLogger);
 
 /**
- * Platform Metrics Overview
+ * Platform Metrics Overview & Financial Reports
  * @route   GET /api/admin/stats
+ * @route   GET /api/admin/reports
  */
 router.get('/stats', adminController.getAdminStats);
+router.get('/reports', adminController.getAdminReports);
 
 /**
  * Customer Management Endpoints

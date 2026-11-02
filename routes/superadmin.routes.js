@@ -45,4 +45,10 @@ router.get('/logs', superadminController.getSystemLogs);
 router.get('/settings', superadminController.getSettings);
 router.put('/settings', superadminController.updateSettings);
 
+/**
+ * Super Admin Console Dashboard Metrics
+ * @route   GET /api/superadmin/stats
+ */
+router.get('/stats', superadminController.getSuperAdminStats);
+
 module.exports = router;

@@ -31,7 +31,7 @@
           <div class="stat-icon purple">🛡️</div>
           <div class="stat-info">
             <span class="stat-label">Admin Staff</span>
-            <span class="stat-value">3</span>
+            <span class="stat-value" id="sa-active-admins">1</span>
             <span class="stat-meta">Active administrators</span>
           </div>
         </div>
@@ -40,8 +40,8 @@
           <div class="stat-icon rose">📜</div>
           <div class="stat-info">
             <span class="stat-label">Audit Log Entries</span>
-            <span class="stat-value">142</span>
-            <span class="stat-meta text-success">All services healthy</span>
+            <span class="stat-value" id="sa-total-logs">0</span>
+            <span class="stat-meta text-success">System audit records</span>
           </div>
         </div>
 
@@ -49,7 +49,7 @@
           <div class="stat-icon sky">👥</div>
           <div class="stat-info">
             <span class="stat-label">Registered Accounts</span>
-            <span class="stat-value">1,554</span>
+            <span class="stat-value" id="sa-total-users">4</span>
             <span class="stat-meta">Across all 4 roles</span>
           </div>
         </div>
@@ -58,7 +58,7 @@
           <div class="stat-icon emerald">⚡</div>
           <div class="stat-info">
             <span class="stat-label">Database Status</span>
-            <span class="stat-value text-success">Healthy</span>
+            <span class="stat-value text-success" id="sa-db-status">Connected</span>
             <span class="stat-meta">MySQL 11 tables active</span>
           </div>
         </div>
@@ -152,28 +152,8 @@
             <a href="system-logs.html" class="text-sm font-semibold text-primary">All Logs &rarr;</a>
           </div>
           <div class="card-body">
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-              <div class="flex items-start gap-3">
-                <span class="stat-icon emerald" style="width: 36px; height: 36px; font-size: 1rem;">✓</span>
-                <div style="flex: 1;">
-                  <div class="text-sm font-bold">Admin Login Verified</div>
-                  <div class="text-xs text-muted">admin@market.com from 127.0.0.1 (Today, 21:04)</div>
-                </div>
-              </div>
-              <div class="flex items-start gap-3">
-                <span class="stat-icon amber" style="width: 36px; height: 36px; font-size: 1rem;">⚡</span>
-                <div style="flex: 1;">
-                  <div class="text-sm font-bold">Category Created</div>
-                  <div class="text-xs text-muted">Added "Sports" by admin@market.com (Today, 20:45)</div>
-                </div>
-              </div>
-              <div class="flex items-start gap-3">
-                <span class="stat-icon indigo" style="width: 36px; height: 36px; font-size: 1rem;">🔑</span>
-                <div style="flex: 1;">
-                  <div class="text-sm font-bold">Permission Granted</div>
-                  <div class="text-xs text-muted">Granted manage_categories to Admin #2 (Yesterday)</div>
-                </div>
-              </div>
+            <div id="sa-recent-events" style="display: flex; flex-direction: column; gap: 1rem;">
+              <div class="text-center text-muted py-4">Loading security event feed...</div>
             </div>
           </div>
         </div>
@@ -189,6 +169,44 @@
   <script>
     // Strict Guard: Only Super Admin role permitted
     const user = requireRole('Super Admin');
-  </script>
+
+    async function loadSuperAdminStats() {
+      try {
+        const res = await apiFetch('/superadmin/stats');
+        if (res && res.data) {
+          const d = res.data;
+          document.getElementById('sa-active-admins').textContent = d.active_admins;
+          document.getElementById('sa-total-logs').textContent = d.total_logs;
+          document.getElementById('sa-total-users').textContent = d.total_users;
+          document.getElementById('sa-db-status').textContent = d.db_status || 'Connected';
+
+          const eventsContainer = document.getElementById('sa-recent-events');
+          if (d.recent_events && d.recent_events.length > 0) {
+            eventsContainer.innerHTML = d.recent_events.map(ev => {
+              const dateStr = ev.created_at ? new Date(ev.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+              return `
+                <div class="flex items-start gap-3">
+                  <span class="stat-icon emerald" style="width: 36px; height: 36px; font-size: 1rem;">⚡</span>
+                  <div style="flex: 1;">
+                    <div class="text-sm font-bold">${escapeHtml(ev.action)}: ${escapeHtml(ev.description || '')}</div>
+                    <div class="text-xs text-muted">${escapeHtml(ev.user_email || 'System')} from ${escapeHtml(ev.ip_address || '127.0.0.1')} (${dateStr})</div>
+                  </div>
+                </div>
+              `;
+            }).join('');
+          } else {
+            eventsContainer.innerHTML = '<div class="text-center text-muted py-4">No recent security events logged.</div>';
+          }
+        }
+      } catch (err) {
+        console.warn('API error loading superadmin stats:', err.message);
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    loadSuperAdminStats();
 </body>
 </html>

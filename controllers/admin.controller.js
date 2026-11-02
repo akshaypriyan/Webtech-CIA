@@ -478,6 +478,101 @@ async function updateOrderStatus(req, res, next) {
   }
 }
 
+/**
+ * @desc    Get aggregate sales analytics and category financial reports
+ * @route   GET /api/admin/reports
+ * @access  Private (Admin, Super Admin)
+ */
+async function getAdminReports(req, res, next) {
+  try {
+    // 1. GMV and completed order count
+    const [[gmvRow]] = await pool.execute(`
+      SELECT 
+        COALESCE(SUM(total_amount), 0) AS gmv,
+        COUNT(order_id) AS total_orders
+      FROM orders 
+      WHERE order_status != 'Cancelled'
+    `);
+
+    const gmv = parseFloat(gmvRow.gmv) || 0;
+    const totalOrders = parseInt(gmvRow.total_orders, 10) || 0;
+    const platformFee = parseFloat((gmv * 0.05).toFixed(2));
+    const avgOrderValue = totalOrders > 0 ? parseFloat((gmv / totalOrders).toFixed(2)) : 0;
+
+    // 2. Average customer review rating
+    const [[reviewRow]] = await pool.execute(`
+      SELECT 
+        COALESCE(AVG(rating), 0) AS avg_rating,
+        COUNT(review_id) AS total_reviews
+      FROM reviews
+    `);
+
+    // 3. Category performance share
+    const [categoriesBreakdown] = await pool.execute(`
+      SELECT 
+        c.category_id,
+        c.category_name,
+        COALESCE(SUM(oi.subtotal), 0) AS category_revenue,
+        COUNT(DISTINCT oi.order_id) AS order_count
+      FROM categories c
+      LEFT JOIN products p ON c.category_id = p.category_id
+      LEFT JOIN order_items oi ON p.product_id = oi.product_id
+      LEFT JOIN orders o ON oi.order_id = o.order_id AND o.order_status != 'Cancelled'
+      GROUP BY c.category_id, c.category_name
+      ORDER BY category_revenue DESC
+    `);
+
+    // Compute percentage share for categories
+    const categoriesWithShare = categoriesBreakdown.map((cat) => {
+      const revenue = parseFloat(cat.category_revenue) || 0;
+      const share = gmv > 0 ? Math.round((revenue / gmv) * 100) : 0;
+      return {
+        category_id: cat.category_id,
+        category_name: cat.category_name,
+        revenue,
+        order_count: parseInt(cat.order_count, 10) || 0,
+        percentage_share: share
+      };
+    });
+
+    // 4. Top Verified Merchants
+    const [topSellers] = await pool.execute(`
+      SELECT 
+        u.user_id,
+        u.name AS seller_name,
+        u.email AS seller_email,
+        COALESCE(SUM(oi.subtotal), 0) AS sales_volume,
+        COUNT(DISTINCT oi.order_id) AS orders_count
+      FROM users u
+      LEFT JOIN order_items oi ON u.user_id = oi.seller_id
+      LEFT JOIN orders o ON oi.order_id = o.order_id AND o.order_status != 'Cancelled'
+      WHERE u.role = 'Seller'
+      GROUP BY u.user_id, u.name, u.email
+      ORDER BY sales_volume DESC
+      LIMIT 5
+    `);
+
+    return sendSuccess(res, 'Admin reports and financial analytics retrieved', {
+      gmv,
+      platform_fees: platformFee,
+      total_orders: totalOrders,
+      avg_order_value: avgOrderValue,
+      customer_satisfaction: parseFloat(Number(reviewRow.avg_rating).toFixed(1)),
+      total_reviews: parseInt(reviewRow.total_reviews, 10) || 0,
+      categories_breakdown: categoriesWithShare,
+      top_sellers: topSellers.map((s) => ({
+        user_id: s.user_id,
+        seller_name: s.seller_name,
+        seller_email: s.seller_email,
+        sales_volume: parseFloat(s.sales_volume) || 0,
+        orders_count: parseInt(s.orders_count, 10) || 0
+      }))
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   getCustomers,
   updateCustomerStatus,
@@ -487,5 +582,6 @@ module.exports = {
   getProducts,
   updateProductStatus,
   getOrders,
-  updateOrderStatus
+  updateOrderStatus,
+  getAdminReports
 };
