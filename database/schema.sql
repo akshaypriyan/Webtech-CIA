@@ -1,5 +1,4 @@
--- =========================
-  is_default TINYINT(1) NOT NULL DEFAULT 0,============================================
+-- =====================================================================
 -- Online Marketplace Web Application - Database Schema
 -- Multi-Role Relational Schema (11 Tables, InnoDB, utf8mb4)
 -- =====================================================================
@@ -53,6 +52,7 @@ CREATE TABLE `addresses` (
   `city` VARCHAR(100) NOT NULL,
   `state` VARCHAR(100) NOT NULL,
   `pincode` VARCHAR(20) NOT NULL,
+  `is_default` TINYINT(1) NOT NULL DEFAULT 0,
   CONSTRAINT `fk_addresses_user`
     FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`)
     ON DELETE CASCADE ON UPDATE CASCADE
