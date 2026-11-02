@@ -19,8 +19,6 @@
         </div>
       </header>
 
-      <p class="demo-note">Mock orders. Status changes are not available yet.</p>
-
       <section class="card" aria-label="Order list">
         <form class="toolbar" role="search" onsubmit="return false">
           <div class="field field--grow">
@@ -46,23 +44,20 @@
               <tr>
                 <th scope="col">Order ID</th><th scope="col">Product</th>
                 <th scope="col" class="num">Qty</th><th scope="col">Date</th>
-                <th scope="col">Customer / Reference</th><th scope="col">Status</th>
+                <th scope="col">Customer / Reference</th><th scope="col">Status</th><th scope="col">Action</th>
               </tr>
             </thead>
             <tbody id="order-rows"></tbody>
           </table>
         </div>
 
-        <div class="empty" id="empty-state" hidden>
-          <h3>No matching orders</h3>
-          <p>Try a different search or status filter.</p>
-        </div>
+        <div class="empty" id="empty-state" hidden></div>
         <p class="sub" id="result-count" aria-live="polite"></p>
       </section>
     </main>
   </div>
 
-  <script src="js/seller-data.js"></script>
+  <script src="js/api.js"></script>
   <script src="js/seller-layout.js"></script>
   <script src="js/seller-orders.js"></script>
 </body>
