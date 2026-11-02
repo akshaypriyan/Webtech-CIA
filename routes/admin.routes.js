@@ -33,4 +33,20 @@ router.put('/customers/:id/status', adminController.updateCustomerStatus);
 router.get('/sellers', adminController.getSellers);
 router.put('/sellers/:id/status', adminController.updateSellerStatus);
 
+/**
+ * Product Catalog Moderation Endpoints
+ * @route   GET /api/admin/products
+ * @route   PUT /api/admin/products/:id/status
+ */
+router.get('/products', adminController.getProducts);
+router.put('/products/:id/status', adminController.updateProductStatus);
+
+/**
+ * Marketplace Order Moderation Endpoints
+ * @route   GET /api/admin/orders
+ * @route   PUT /api/admin/orders/:id/status
+ */
+router.get('/orders', adminController.getOrders);
+router.put('/orders/:id/status', adminController.updateOrderStatus);
+
 module.exports = router;
