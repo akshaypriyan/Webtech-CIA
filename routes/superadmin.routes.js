@@ -31,4 +31,18 @@ router.put('/admins/:id/status', superadminController.updateAdminStatus);
 router.get('/admins/:id/permissions', superadminController.getAdminPermissions);
 router.put('/admins/:id/permissions', superadminController.updateAdminPermissions);
 
+/**
+ * System Audit Trail & Security Logs
+ * @route   GET /api/superadmin/logs
+ */
+router.get('/logs', superadminController.getSystemLogs);
+
+/**
+ * Global Marketplace Configuration Settings
+ * @route   GET /api/superadmin/settings
+ * @route   PUT /api/superadmin/settings
+ */
+router.get('/settings', superadminController.getSettings);
+router.put('/settings', superadminController.updateSettings);
+
 module.exports = router;

@@ -109,15 +109,51 @@
   <script>
     requireRole('Super Admin');
 
-    document.getElementById('settings-form').addEventListener('submit', (e) => {
+    async function loadSettings() {
+      try {
+        const res = await apiFetch('/superadmin/settings');
+        if (res && res.data) {
+          const s = res.data;
+          if (s.site_name) document.getElementById('setting-site-name').value = s.site_name;
+          if (s.support_email) document.getElementById('setting-support-email').value = s.support_email;
+          if (s.commission_fee_rate !== undefined) document.getElementById('setting-fee-rate').value = s.commission_fee_rate;
+          if (s.currency) document.getElementById('setting-currency').value = s.currency;
+          if (s.jwt_expiration) document.getElementById('setting-jwt-expiry').value = s.jwt_expiration;
+          if (s.max_login_attempts) document.getElementById('setting-max-attempts').value = s.max_login_attempts;
+          document.getElementById('setting-maintenance-mode').checked = Boolean(s.maintenance_mode);
+        }
+      } catch (err) {
+        console.warn('API error loading settings, using default view:', err.message);
+      }
+    }
+
+    document.getElementById('settings-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const fee = document.getElementById('setting-fee-rate').value;
-      const maintenance = document.getElementById('setting-maintenance-mode').checked;
+      const site_name = document.getElementById('setting-site-name').value.trim();
+      const support_email = document.getElementById('setting-support-email').value.trim();
+      const commission_fee_rate = parseFloat(document.getElementById('setting-fee-rate').value);
+      const currency = document.getElementById('setting-currency').value;
+      const jwt_expiration = document.getElementById('setting-jwt-expiry').value;
+      const max_login_attempts = parseInt(document.getElementById('setting-max-attempts').value, 10);
+      const maintenance_mode = document.getElementById('setting-maintenance-mode').checked;
       
-      showToast('Saving platform settings...', 'info', 1000);
-      setTimeout(() => {
+      try {
+        await apiFetch('/superadmin/settings', {
+          method: 'PUT',
+          body: {
+            site_name,
+            support_email,
+            commission_fee_rate,
+            currency,
+            jwt_expiration,
+            max_login_attempts,
+            maintenance_mode
+          }
+        });
         showToast('Settings saved successfully and recorded to audit trail!', 'success');
-      }, 700);
+      } catch (err) {
+        showToast(err.message || 'Failed to save settings', 'error');
+      }
     });
 
     window.triggerBackup = function() {
@@ -126,6 +162,8 @@
         showToast('Backup completed! marketplace_db_snapshot.sql saved.', 'success');
       }, 1200);
     };
+
+    loadSettings();
   </script>
 </body>
 </html>
