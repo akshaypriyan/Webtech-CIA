@@ -470,9 +470,126 @@ async function getCustomerDashboardStats(req, res, next) {
   }
 }
 
+/**
+ * GET /api/orders/:id
+ * Retrieves complete itemized order details and invoice metadata for a single order.
+ * Strictly verifies ownership (customer_id = req.user.user_id) unless accessed by Admin/Super Admin.
+ */
+async function getOrderById(req, res, next) {
+  try {
+    const userId = req.user.user_id;
+    const userRole = req.user.role;
+    const orderId = parseInt(req.params.id, 10);
+
+    if (!orderId || isNaN(orderId)) {
+      return sendError(res, 'Valid order ID is required.', 400);
+    }
+
+    // 1. Fetch order details with customer contact info
+    let orderQuery = `
+      SELECT 
+        o.order_id,
+        o.customer_id,
+        o.total_amount,
+        o.shipping_address,
+        o.order_status,
+        o.payment_status,
+        o.order_date,
+        u.name AS customer_name,
+        u.email AS customer_email,
+        u.mobile AS customer_mobile
+      FROM orders o
+      JOIN users u ON o.customer_id = u.user_id
+      WHERE o.order_id = ?
+    `;
+    const queryParams = [orderId];
+
+    // If customer role, enforce strict account ownership
+    if (userRole === 'Customer') {
+      orderQuery += ' AND o.customer_id = ?';
+      queryParams.push(userId);
+    }
+
+    const [orders] = await pool.query(orderQuery, queryParams);
+
+    if (orders.length === 0) {
+      return sendError(res, 'Order not found or unauthorized to view.', 404);
+    }
+
+    const order = orders[0];
+
+    // 2. Fetch line items for this order with seller details
+    const [items] = await pool.query(
+      `SELECT 
+        oi.order_item_id,
+        oi.order_id,
+        oi.product_id,
+        oi.seller_id,
+        oi.quantity,
+        oi.price,
+        oi.subtotal,
+        oi.item_status,
+        p.product_name,
+        p.image,
+        u.name AS seller_name,
+        u.email AS seller_email
+       FROM order_items oi
+       JOIN products p ON oi.product_id = p.product_id
+       JOIN users u ON oi.seller_id = u.user_id
+       WHERE oi.order_id = ?
+       ORDER BY oi.order_item_id ASC`,
+      [orderId]
+    );
+
+    // 3. Calculate authoritative invoice breakdown
+    const itemsSubtotal = items.reduce((acc, it) => acc + Number(it.subtotal), 0);
+    const totalAmount = Number(order.total_amount);
+    const taxAmount = Math.max(0, +(totalAmount - itemsSubtotal).toFixed(2));
+
+    const invoiceData = {
+      order_id: order.order_id,
+      order_date: order.order_date,
+      order_status: order.order_status,
+      payment_status: order.payment_status,
+      shipping_address: order.shipping_address,
+      customer: {
+        id: order.customer_id,
+        name: order.customer_name,
+        email: order.customer_email,
+        mobile: order.customer_mobile
+      },
+      items: items.map(i => ({
+        order_item_id: i.order_item_id,
+        product_id: i.product_id,
+        product_name: i.product_name,
+        image: i.image,
+        seller_id: i.seller_id,
+        seller_name: i.seller_name,
+        seller_email: i.seller_email,
+        quantity: i.quantity,
+        unit_price: Number(i.price),
+        subtotal: Number(i.subtotal),
+        item_status: i.item_status
+      })),
+      pricing: {
+        subtotal: +itemsSubtotal.toFixed(2),
+        tax: taxAmount,
+        total: totalAmount
+      }
+    };
+
+    return sendSuccess(res, 'Order invoice retrieved successfully', invoiceData);
+
+  } catch (error) {
+    console.error('Error retrieving order invoice:', error);
+    return sendError(res, 'Failed to retrieve order details.', 500);
+  }
+}
+
 module.exports = {
   placeOrder,
   getMyOrders,
+  getOrderById,
   cancelOrder,
   getCustomerDashboardStats
 };

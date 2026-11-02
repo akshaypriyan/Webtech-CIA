@@ -264,6 +264,16 @@
       document.getElementById('detail-loading').style.display = 'none';
       document.getElementById('detail-content').style.display  = 'block';
       if (typeof initReviews === 'function') { initReviews(productId); }
+
+      // Smooth scroll to target section if hash in URL (e.g. #customer-reviews-section)
+      if (window.location.hash) {
+        setTimeout(() => {
+          const target = document.querySelector(window.location.hash);
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 350);
+      }
     }
 
     /* ---- Add to Cart button logic ---- */
