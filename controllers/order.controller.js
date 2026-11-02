@@ -80,15 +80,32 @@ async function placeOrder(req, res, next) {
     for (const item of items) {
       if (item.product_status !== 'Active') {
         await connection.rollback();
-        return sendError(res, `Product "${item.product_name}" is currently inactive or unavailable.`, 400);
+        return sendError(
+          res, 
+          `"${item.product_name}" is currently inactive or unavailable. Please remove it from your cart to proceed.`, 
+          400,
+          {
+            code: 'ITEM_UNAVAILABLE',
+            product_id: item.product_id,
+            product_name: item.product_name,
+            status: item.product_status
+          }
+        );
       }
 
       if (item.stock_quantity < item.quantity) {
         await connection.rollback();
         return sendError(
           res, 
-          `Insufficient stock for "${item.product_name}". Only ${item.stock_quantity} remaining in inventory.`, 
-          400
+          `Insufficient stock for "${item.product_name}". Only ${item.stock_quantity} unit(s) remaining in inventory (you requested ${item.quantity}).`, 
+          400,
+          {
+            code: 'INSUFFICIENT_STOCK',
+            product_id: item.product_id,
+            product_name: item.product_name,
+            requested_quantity: item.quantity,
+            available_stock: item.stock_quantity
+          }
         );
       }
     }

@@ -62,14 +62,40 @@ async function getCart(req, res, next) {
       [cartId]
     );
 
-    // Authoritative Server-side Price Calculations
+    // Authoritative Server-side Price Calculations & Live Stock Safety Checks
     let subtotal = 0;
     let totalItems = 0;
+    let hasStockIssues = false;
+    let stockIssuesCount = 0;
 
-    items.forEach(item => {
+    const enrichedItems = items.map(item => {
       const unitPrice = Number(item.current_price);
-      subtotal += unitPrice * item.quantity;
-      totalItems += item.quantity;
+      const stockQty = Number(item.stock_quantity);
+      const itemQty = Number(item.quantity);
+
+      subtotal += unitPrice * itemQty;
+      totalItems += itemQty;
+
+      const isUnavailable = item.product_status !== 'Active';
+      const isOutOfStock = stockQty === 0;
+      const isInsufficientStock = itemQty > stockQty;
+      const hasIssue = isUnavailable || isOutOfStock || isInsufficientStock;
+
+      if (hasIssue) {
+        hasStockIssues = true;
+        stockIssuesCount++;
+      }
+
+      return {
+        ...item,
+        current_price: unitPrice,
+        stock_quantity: stockQty,
+        quantity: itemQty,
+        is_unavailable: isUnavailable,
+        is_out_of_stock: isOutOfStock,
+        is_insufficient_stock: isInsufficientStock,
+        has_issue: hasIssue
+      };
     });
 
     const tax = Number((subtotal * 0.05).toFixed(2));
@@ -81,7 +107,9 @@ async function getCart(req, res, next) {
       subtotal: Number(subtotal.toFixed(2)),
       estimated_tax: tax,
       total_amount: totalAmount,
-      items
+      has_stock_issues: hasStockIssues,
+      stock_issues_count: stockIssuesCount,
+      items: enrichedItems
     });
   } catch (error) {
     next(error);
