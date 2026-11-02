@@ -204,6 +204,8 @@
                 <h3 style="font-size: 1.1rem; margin-bottom: 0;">Order Review</h3>
               </div>
               <div class="card-body">
+                <div id="checkout-error-banner" style="display: none;" class="alert alert-danger mb-4"></div>
+                <div id="checkout-stock-alert" style="display: none;" class="alert alert-warning mb-4"></div>
                 <div id="checkout-items-list">
                   <div class="order-mini-item">
                     <div>
@@ -290,6 +292,10 @@
         const response = await apiFetch('/cart');
         checkoutCart = response.data;
         const items = checkoutCart && checkoutCart.items ? checkoutCart.items : [];
+        const hasStockIssues = Boolean(
+          checkoutCart.has_stock_issues || 
+          items.some(i => i.has_issue || i.quantity > i.stock_quantity || i.product_status !== 'Active')
+        );
 
         if (items.length === 0) {
           itemsList.innerHTML = `
@@ -306,29 +312,69 @@
           return;
         }
 
-        // Render live cart items
-        itemsList.innerHTML = items.map(item => `
-          <div class="order-mini-item">
-            <div>
+        // Display inventory alert banner if stock issues exist
+        const stockAlertEl = document.getElementById('checkout-stock-alert');
+        if (stockAlertEl) {
+          if (hasStockIssues) {
+            stockAlertEl.style.display = 'block';
+            stockAlertEl.innerHTML = `
+              <span>⚠️ <strong>Stock Conflict:</strong> One or more items in your cart exceed available stock or are currently unavailable.</span>
+              <div class="mt-2">
+                <a href="cart.html" class="btn btn-sm btn-secondary" style="display:inline-flex; align-items:center; gap:4px;">
+                  ✏️ Return to Cart to Update
+                </a>
+              </div>
+            `;
+          } else {
+            stockAlertEl.style.display = 'none';
+          }
+        }
+
+        // Render live cart items with stock status alerts
+        itemsList.innerHTML = items.map(item => {
+          const isUnavailable = item.product_status !== 'Active';
+          const isOutOfStock = Number(item.stock_quantity) === 0;
+          const isInsufficient = Number(item.quantity) > Number(item.stock_quantity);
+          const hasIssue = isUnavailable || isOutOfStock || isInsufficient;
+
+          return `
+          <div class="order-mini-item" style="${hasIssue ? 'background: #fef2f2; padding: var(--space-2) var(--space-3); border-radius: var(--radius-xs); border: 1px solid #fca5a5; margin-bottom: 6px;' : ''}">
+            <div style="flex: 1;">
               <div class="font-semibold" style="color: var(--neutral-900);">
                 ${escapeHtml(item.product_name)}
               </div>
               <div class="text-muted" style="font-size: 0.82rem;">
                 Qty: ${item.quantity} &bull; $${Number(item.current_price).toFixed(2)} each
               </div>
+              ${isUnavailable ? `
+                <div class="badge badge-danger" style="margin-top: 4px; font-size: 0.72rem;">❌ Currently Unavailable</div>
+              ` : isOutOfStock ? `
+                <div class="badge badge-danger" style="margin-top: 4px; font-size: 0.72rem;">❌ Out of Stock</div>
+              ` : isInsufficient ? `
+                <div class="badge badge-warning" style="margin-top: 4px; font-size: 0.72rem;">⚠️ Only ${item.stock_quantity} in stock (requested ${item.quantity})</div>
+              ` : ''}
             </div>
-            <div class="font-semibold">
+            <div class="font-semibold" style="text-align: right;">
               $${(Number(item.current_price) * item.quantity).toFixed(2)}
             </div>
           </div>
-        `).join('');
+        `}).join('');
 
         // Authoritative server-calculated totals
         subtotalEl.textContent = `$${Number(checkoutCart.subtotal).toFixed(2)}`;
         taxEl.textContent = `$${Number(checkoutCart.estimated_tax).toFixed(2)}`;
         totalEl.textContent = `$${Number(checkoutCart.total_amount).toFixed(2)}`;
-        placeOrderBtn.disabled = false;
-        placeOrderBtn.textContent = 'Confirm & Place Order';
+
+        // Lock button if stock issues exist
+        if (hasStockIssues) {
+          placeOrderBtn.disabled = true;
+          placeOrderBtn.textContent = 'Stock Warning — Update Cart';
+          placeOrderBtn.title = 'Please resolve inventory warnings before placing order';
+        } else {
+          placeOrderBtn.disabled = false;
+          placeOrderBtn.textContent = 'Confirm & Place Order';
+          placeOrderBtn.title = '';
+        }
 
       } catch (err) {
         console.error('Failed to load checkout:', err);
@@ -513,6 +559,16 @@
         return;
       }
 
+      // Pre-flight validation: block if any stock or availability issues exist
+      const hasStockIssues = Boolean(
+        checkoutCart.has_stock_issues || 
+        checkoutCart.items.some(i => i.has_issue || i.quantity > i.stock_quantity || i.product_status !== 'Active')
+      );
+      if (hasStockIssues) {
+        showToast('⚠️ Cannot place order: Please return to your cart and resolve stock warnings.', 'warning', 4500);
+        return;
+      }
+
       const address = getSelectedShippingAddress();
       if (!address) {
         showToast('Please select a shipping address before proceeding.', 'warning');
@@ -522,6 +578,13 @@
       const btn = document.getElementById('place-order-btn');
       btn.disabled = true;
       btn.textContent = 'Processing Order...';
+
+      // Clear any previous error banner
+      const errBanner = document.getElementById('checkout-error-banner');
+      if (errBanner) {
+        errBanner.style.display = 'none';
+        errBanner.innerHTML = '';
+      }
 
       try {
         const response = await apiFetch('/orders', {
@@ -538,7 +601,25 @@
 
       } catch (err) {
         console.error('Failed to place order:', err);
-        showToast(err.message || 'Failed to place order. Please try again.', 'error', 4000);
+        const errMsg = err.message || 'Failed to place order. Please try again.';
+        showToast(errMsg, 'error', 5000);
+
+        // Display an actionable error banner inside the Order Review card
+        if (errBanner) {
+          errBanner.style.display = 'block';
+          errBanner.innerHTML = `
+            <div>❌ <strong>Order Placement Blocked:</strong> ${escapeHtml(errMsg)}</div>
+            <div class="mt-2">
+              <a href="cart.html" class="btn btn-sm btn-secondary" style="display: inline-flex; align-items: center; gap: 4px;">
+                ✏️ Return to Cart to Update
+              </a>
+            </div>
+          `;
+        }
+
+        // Re-sync live cart data so customer sees current inventory status immediately
+        await loadCheckoutData();
+
         btn.disabled = false;
         btn.textContent = 'Confirm & Place Order';
       }
