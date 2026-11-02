@@ -134,6 +134,214 @@
       color: white;
       border-color: var(--primary);
     }
+
+    /* --- ORDER ITEMS, THUMBNAILS & STAGE 3 ACTIONS --- */
+    .order-item-thumb {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-sm);
+      background: var(--neutral-100);
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+      font-size: 1.3rem;
+    }
+    .order-item-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .order-item-link {
+      color: var(--neutral-900);
+      text-decoration: none;
+      transition: color var(--transition-fast);
+      display: inline-block;
+      line-height: 1.3;
+    }
+    .order-item-link:hover {
+      color: var(--primary);
+      text-decoration: underline;
+    }
+    .order-action-group {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: var(--space-2);
+      flex-wrap: nowrap;
+    }
+    .buy-again-btn {
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.8rem;
+      padding: 0.35rem 0.7rem;
+      border-radius: var(--radius-xs);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .buy-again-btn:hover:not(:disabled) {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-light);
+    }
+    .review-action-btn {
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.8rem;
+      padding: 0.35rem 0.7rem;
+      border-radius: var(--radius-xs);
+      text-decoration: none;
+      transition: all var(--transition-fast);
+      font-weight: 600;
+    }
+    .btn-warning-gold {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: white !important;
+      border: 1px solid #d97706;
+      box-shadow: 0 2px 6px rgba(245, 158, 11, 0.25);
+    }
+    .btn-warning-gold:hover {
+      background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+      box-shadow: 0 4px 10px rgba(245, 158, 11, 0.35);
+      transform: translateY(-1px);
+    }
+    .btn-review-outline {
+      background: var(--bg-surface);
+      color: #b45309 !important;
+      border: 1px solid #fcd34d;
+    }
+    .btn-review-outline:hover {
+      background: #fef3c7;
+      border-color: #f59e0b;
+      transform: translateY(-1px);
+    }
+    .btn-success {
+      background: var(--success) !important;
+      color: white !important;
+      border-color: var(--success) !important;
+    }
+
+    /* --- INVOICE MODAL & PRINT STYLES --- */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      z-index: 1050;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-4);
+    }
+    .modal-overlay.is-active {
+      display: flex;
+    }
+    .invoice-card {
+      background: var(--bg-surface);
+      width: 100%;
+      max-width: 680px;
+      max-height: 90vh;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: modalFadeIn 0.2s ease-out;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .invoice-card-header {
+      padding: var(--space-4) var(--space-6);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--neutral-50);
+    }
+    .invoice-card-body {
+      padding: var(--space-6);
+      overflow-y: auto;
+    }
+    .invoice-card-footer {
+      padding: var(--space-4) var(--space-6);
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: var(--space-3);
+      background: var(--neutral-50);
+    }
+    .invoice-brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+    .invoice-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+      padding: var(--space-4);
+      background: var(--neutral-50);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+    }
+    @media (max-width: 600px) {
+      .invoice-meta-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .invoice-summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: var(--space-2) 0;
+      font-size: 0.92rem;
+    }
+    .invoice-summary-row.total {
+      border-top: 2px solid var(--border-subtle);
+      margin-top: var(--space-2);
+      padding-top: var(--space-3);
+      font-weight: 800;
+      font-size: 1.15rem;
+      color: var(--neutral-900);
+    }
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+      #invoice-print-container, #invoice-print-container * {
+        visibility: visible !important;
+      }
+      #invoice-print-container {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 24px !important;
+        background: white !important;
+        color: black !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -189,6 +397,30 @@
 
     </div>
   </main>
+
+  <!-- Invoice / Receipt Printable Modal -->
+  <div id="invoice-modal-overlay" class="modal-overlay" onclick="handleModalOverlayClick(event)">
+    <div class="invoice-card" id="invoice-print-container">
+      <div class="invoice-card-header no-print">
+        <div class="flex items-center gap-2">
+          <span style="font-size: 1.25rem;">🧾</span>
+          <h3 style="margin-bottom: 0; font-size: 1.1rem; color: var(--neutral-900);">Official Tax Invoice</h3>
+        </div>
+        <button type="button" class="btn btn-outline btn-sm" onclick="closeInvoiceModal()" style="padding: 2px 8px; border-radius: var(--radius-full); line-height: 1;">&times;</button>
+      </div>
+
+      <div class="invoice-card-body" id="invoice-modal-content">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <div class="invoice-card-footer no-print">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeInvoiceModal()">Close</button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="printInvoice()" style="display: inline-flex; align-items: center; gap: 4px;">
+          🖨️ Print Invoice
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Global Toast & Scripts -->
   <div id="toast-container"></div>
@@ -286,6 +518,9 @@
                 <span class="badge ${badgeClass}" style="font-size: 0.85rem; padding: 0.35rem 0.85rem;">
                   ${order.order_status}
                 </span>
+                <button class="btn btn-outline btn-sm" onclick="viewInvoice(${order.order_id})" style="display: inline-flex; align-items: center; gap: 4px;">
+                  📄 Invoice
+                </button>
                 ${isCancellable ? `
                   <button class="btn btn-danger btn-sm" onclick="cancelOrder(${order.order_id}, this)">
                     Cancel Order
@@ -316,23 +551,68 @@
                 <table class="table">
                   <thead>
                     <tr>
-                      <th>Product Description</th>
+                      <th style="min-width: 240px;">Product Description</th>
                       <th>Seller</th>
                       <th class="text-center">Quantity</th>
                       <th class="text-right">Price</th>
                       <th class="text-right">Subtotal</th>
+                      <th class="text-right" style="min-width: 210px;">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    ${order.items.map(item => `
+                    ${order.items.map(item => {
+                      const isDelivered = order.order_status === 'Delivered' || item.item_status === 'Delivered';
+                      const canReview = order.order_status !== 'Cancelled';
+                      const productEmoji = getProductEmoji(item.product_name);
+
+                      return `
                       <tr>
-                        <td><strong>${escapeHtml(item.product_name)}</strong></td>
-                        <td class="text-muted">${escapeHtml(item.seller_name)}</td>
-                        <td class="text-center">${item.quantity}</td>
-                        <td class="text-right">$${Number(item.price).toFixed(2)}</td>
-                        <td class="text-right font-semibold">$${Number(item.subtotal).toFixed(2)}</td>
+                        <td>
+                          <div class="flex items-center gap-3">
+                            <div class="order-item-thumb">
+                              ${item.image ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.product_name)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
+                              <div class="order-item-emoji-placeholder" style="${item.image ? 'display:none;' : ''}">${productEmoji}</div>
+                            </div>
+                            <div>
+                              <a href="product-details.html?id=${item.product_id}" class="order-item-link font-semibold">
+                                ${escapeHtml(item.product_name)}
+                              </a>
+                              <div class="text-muted" style="font-size: 0.76rem; margin-top: 2px;">
+                                Item Status: <span class="badge ${item.item_status === 'Delivered' ? 'badge-success' : 'badge-neutral'}" style="font-size: 0.7rem; padding: 1px 6px;">${item.item_status || order.order_status}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="text-muted" style="vertical-align: middle;">${escapeHtml(item.seller_name)}</td>
+                        <td class="text-center font-semibold" style="vertical-align: middle;">${item.quantity}</td>
+                        <td class="text-right" style="vertical-align: middle;">$${Number(item.price).toFixed(2)}</td>
+                        <td class="text-right font-semibold" style="vertical-align: middle;">$${Number(item.subtotal).toFixed(2)}</td>
+                        <td class="text-right" style="vertical-align: middle;">
+                          <div class="order-action-group">
+                            <button class="btn btn-outline btn-sm buy-again-btn" 
+                                    data-product-id="${item.product_id}" 
+                                    data-product-name="${escapeHtml(item.product_name)}" 
+                                    onclick="handleBuyAgain(this)"
+                                    title="Add this item back into your cart">
+                              <span>🔄</span> <span>Buy Again</span>
+                            </button>
+                            ${isDelivered ? `
+                              <a href="product-details.html?id=${item.product_id}#customer-reviews-section" 
+                                 class="btn btn-sm review-action-btn btn-warning-gold" 
+                                 title="Share your review for this delivered item">
+                                <span>⭐</span> <span>Write a Review</span>
+                              </a>
+                            ` : canReview ? `
+                              <a href="product-details.html?id=${item.product_id}#customer-reviews-section" 
+                                 class="btn btn-sm review-action-btn btn-review-outline" 
+                                 title="Write a review for this purchase">
+                                <span>⭐</span> <span>Review</span>
+                              </a>
+                            ` : ''}
+                          </div>
+                        </td>
                       </tr>
-                    `).join('')}
+                    `}).join('')}
                   </tbody>
                 </table>
               </div>
@@ -443,6 +723,199 @@
       return (str || '').replace(/[&<>"']/g, m => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
       }[m]));
+    }
+
+    function getProductEmoji(name) {
+      const lower = (name || '').toLowerCase();
+      if (lower.includes('headphone') || lower.includes('audio') || lower.includes('sound')) return '🎧';
+      if (lower.includes('keyboard') || lower.includes('mouse')) return '⌨️';
+      if (lower.includes('jacket') || lower.includes('trouser') || lower.includes('shoes') || lower.includes('shirt')) return '👕';
+      if (lower.includes('fryer') || lower.includes('bottle') || lower.includes('cook')) return '🍳';
+      if (lower.includes('book') || lower.includes('programmer') || lower.includes('code')) return '📚';
+      if (lower.includes('serum') || lower.includes('oil') || lower.includes('beauty')) return '🧴';
+      if (lower.includes('dumbbell') || lower.includes('sport') || lower.includes('fitness')) return '🏋️';
+      return '📦';
+    }
+
+    async function handleBuyAgain(btnElement) {
+      const productId = parseInt(btnElement.getAttribute('data-product-id'), 10);
+      const productName = btnElement.getAttribute('data-product-name') || 'Item';
+      await buyAgain(productId, productName, btnElement);
+    }
+
+    async function buyAgain(productId, productName, btnElement) {
+      if (!productId) return;
+
+      let originalHtml = '';
+      if (btnElement) {
+        originalHtml = btnElement.innerHTML;
+        btnElement.disabled = true;
+        btnElement.innerHTML = `<span>⏳ Adding...</span>`;
+      }
+
+      try {
+        const response = await apiFetch('/cart', {
+          method: 'POST',
+          body: { product_id: productId, quantity: 1 }
+        });
+
+        if (btnElement) {
+          btnElement.innerHTML = `<span>✓ Added!</span>`;
+          btnElement.classList.add('btn-success');
+        }
+
+        showToast(
+          `🛒 Added <strong>${escapeHtml(productName)}</strong> to cart! <a href="cart.html" style="color:var(--primary); font-weight:700; text-decoration:underline; margin-left:8px;">View Cart &rarr;</a>`,
+          'success',
+          4500
+        );
+
+        setTimeout(() => {
+          if (btnElement) {
+            btnElement.disabled = false;
+            btnElement.classList.remove('btn-success');
+            btnElement.innerHTML = originalHtml;
+          }
+        }, 1800);
+
+      } catch (err) {
+        console.error('Buy Again failed:', err);
+        showToast(err.message || 'Unable to re-order product at this time.', 'warning', 4000);
+        if (btnElement) {
+          btnElement.disabled = false;
+          btnElement.innerHTML = originalHtml;
+        }
+      }
+    }
+
+    async function viewInvoice(orderId) {
+      const overlay = document.getElementById('invoice-modal-overlay');
+      const content = document.getElementById('invoice-modal-content');
+
+      overlay.classList.add('is-active');
+      content.innerHTML = `
+        <div class="text-center py-12 text-muted" style="font-size: 0.95rem;">
+          Loading invoice details for Order #ORD-${orderId}...
+        </div>
+      `;
+
+      try {
+        const res = await apiFetch(`/orders/${orderId}`);
+        const inv = res.data;
+
+        content.innerHTML = `
+          <!-- Invoice Header -->
+          <div class="flex items-start justify-between flex-wrap gap-4 mb-6">
+            <div>
+              <div class="invoice-brand">🛒 MarketHub</div>
+              <p class="text-muted" style="font-size: 0.82rem; margin-top: 2px; margin-bottom: 0;">Multi-Vendor Marketplace Platform</p>
+            </div>
+            <div class="text-right">
+              <span class="badge ${getStatusBadgeClass(inv.order_status)}" style="font-size: 0.8rem; margin-bottom: 4px;">${inv.order_status}</span>
+              <div style="font-weight: 700; font-size: 1.05rem; color: var(--neutral-900);">Invoice #ORD-${inv.order_id}</div>
+              <div class="text-muted" style="font-size: 0.82rem;">Date: ${formatDate(inv.order_date)}</div>
+            </div>
+          </div>
+
+          <!-- Customer & Shipping Meta Grid -->
+          <div class="invoice-meta-grid">
+            <div>
+              <span class="order-meta-label">Billed & Shipped To</span>
+              <div class="font-bold" style="color: var(--neutral-900); font-size: 0.95rem; margin-top: 2px;">${escapeHtml(inv.customer.name)}</div>
+              <div class="text-muted" style="font-size: 0.85rem;">${escapeHtml(inv.customer.email)}</div>
+              <div class="text-muted" style="font-size: 0.85rem;">Ph: ${escapeHtml(inv.customer.mobile || 'N/A')}</div>
+              <div style="font-size: 0.88rem; margin-top: 6px; color: var(--neutral-800);">${escapeHtml(inv.shipping_address)}</div>
+            </div>
+            <div>
+              <span class="order-meta-label">Payment Information</span>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="badge ${inv.payment_status === 'Paid' ? 'badge-success' : 'badge-warning'}">${inv.payment_status}</span>
+                <span style="font-size: 0.85rem; color: var(--neutral-600);">${inv.payment_status === 'Paid' ? 'Direct Payment Confirmed' : 'Pending Verification'}</span>
+              </div>
+              <div style="margin-top: var(--space-4);">
+                <span class="order-meta-label">Order Fulfillment</span>
+                <div style="font-size: 0.85rem; color: var(--neutral-700); margin-top: 2px;">Multi-vendor fulfillment across ${inv.items.length} item(s)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Line Items Table -->
+          <div class="table-responsive mb-6">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Product Description</th>
+                  <th>Merchant</th>
+                  <th class="text-center">Qty</th>
+                  <th class="text-right">Unit Price</th>
+                  <th class="text-right">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${inv.items.map(item => `
+                  <tr>
+                    <td>
+                      <a href="product-details.html?id=${item.product_id}" target="_blank" style="color: inherit; text-decoration: none; font-weight: 700;">
+                        ${escapeHtml(item.product_name)}
+                      </a>
+                      <div class="text-muted" style="font-size: 0.78rem;">Status: <span class="badge badge-neutral" style="font-size: 0.7rem; padding: 1px 6px;">${item.item_status}</span></div>
+                    </td>
+                    <td class="text-muted" style="font-size: 0.85rem;">${escapeHtml(item.seller_name)}</td>
+                    <td class="text-center font-semibold">${item.quantity}</td>
+                    <td class="text-right">$${Number(item.unit_price).toFixed(2)}</td>
+                    <td class="text-right font-semibold">$${Number(item.subtotal).toFixed(2)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Financial Breakdown Summary -->
+          <div class="flex justify-end">
+            <div style="width: 100%; max-width: 300px;">
+              <div class="invoice-summary-row">
+                <span class="text-muted">Items Subtotal:</span>
+                <span class="font-semibold">$${inv.pricing.subtotal.toFixed(2)}</span>
+              </div>
+              <div class="invoice-summary-row">
+                <span class="text-muted">Estimated Tax (5% GST):</span>
+                <span class="font-semibold">$${inv.pricing.tax.toFixed(2)}</span>
+              </div>
+              <div class="invoice-summary-row total">
+                <span>Grand Total:</span>
+                <span style="color: var(--primary);">$${inv.pricing.total.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Invoice Footer Notice -->
+          <div class="mt-6 pt-4 text-center text-muted" style="border-top: 1px dashed var(--border-subtle); font-size: 0.8rem;">
+            Thank you for shopping with MarketHub! For queries regarding vendor fulfillment or returns, please reference Order #ORD-${inv.order_id}.
+          </div>
+        `;
+
+      } catch (err) {
+        console.error('Failed to load invoice:', err);
+        content.innerHTML = `
+          <div class="alert alert-danger" style="margin-bottom: 0;">
+            <span>Failed to load invoice: ${escapeHtml(err.message || 'Server error')}</span>
+          </div>
+        `;
+      }
+    }
+
+    function closeInvoiceModal() {
+      document.getElementById('invoice-modal-overlay').classList.remove('is-active');
+    }
+
+    function handleModalOverlayClick(e) {
+      if (e.target.id === 'invoice-modal-overlay') {
+        closeInvoiceModal();
+      }
+    }
+
+    function printInvoice() {
+      window.print();
     }
 
     document.addEventListener('DOMContentLoaded', () => {
