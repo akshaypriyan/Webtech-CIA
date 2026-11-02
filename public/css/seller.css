@@ -173,7 +173,7 @@ img { max-width: 100%; }
 .field .hint { font-size: 0.8rem; color: var(--color-muted); }
 .field .error { font-size: 0.82rem; color: var(--color-danger); min-height: 1em; }
 
-input[type="text"], input[type="search"], input[type="number"], input[type="file"],
+input[type="text"], input[type="search"], input[type="number"], input[type="date"], input[type="file"],
 select, textarea {
   font: inherit; color: inherit; width: 100%;
   padding: 8px 10px; background: #fff;
@@ -242,3 +242,36 @@ img.thumb { object-fit: cover; background: var(--color-border); }
 .form-status--error { color: var(--color-danger); }
 #toast-container { position: fixed; top: 16px; right: 16px; display: grid; gap: 8px; z-index: 60; }
 #toast-container .toast { display: flex; gap: 8px; align-items: center; }
+
+/* ---------- Responsive polish (Day 4) ---------- */
+.grid-2 > *, .form-layout > *, .stat-grid > * { min-width: 0; }
+.table { min-width: 520px; }
+.table--flush { min-width: 0; }
+.table td, .table th { overflow-wrap: anywhere; }
+.table td.num, .table th { overflow-wrap: normal; }
+.card { overflow-wrap: anywhere; }
+#toast-container, .toast-region { max-width: calc(100vw - 32px); }
+.field input[type="date"] { min-width: 150px; }
+button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+@media (max-width: 860px) {
+  .menu-toggle { min-height: 40px; }
+  .sidebar__link { min-height: 40px; }
+}
+@media (max-width: 520px) {
+  .page-header h1 { font-size: 1.35rem; }
+  .page-header > .btn, .quick-actions .btn { flex: 1 1 auto; }
+  .quick-actions { width: 100%; }
+  .card { padding: 14px; }
+  .stat__value { font-size: 1.45rem; }
+  .toolbar .field, .toolbar .field--grow { flex: 1 1 100%; }
+  .toolbar .field .btn { width: 100%; }
+  .form-actions .btn { flex: 1 1 100%; }
+  .btn--sm { min-height: 36px; }
+  .bar__row { grid-template-columns: 1fr 70px; }
+  .bar__row > span:first-child { grid-column: 1 / -1; }
+  .bar__row .bar__track { grid-column: 1; }
+  .list__item { flex-wrap: wrap; }
+  .table th, .table td { padding: 8px; }
+  input, select, textarea { font-size: 16px; } /* prevents iOS zoom on focus */
+}

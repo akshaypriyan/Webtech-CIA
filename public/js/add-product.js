@@ -15,7 +15,9 @@
   const preview = document.getElementById('image-preview');
   const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
   const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
+  const IMAGE_EXTENSIONS = /\.(png|jpe?g|webp)$/i;
   let previewUrl = null;
+  let submitting = false;
 
   const categorySelect = document.getElementById('category');
   const submitBtn = document.getElementById('submit-btn');
@@ -46,12 +48,14 @@
       v = v.trim();
       if (!v) return 'Product name is required.';
       if (v.length < 3) return 'Name must be at least 3 characters.';
+      if (v.length > 100) return 'Name cannot exceed 100 characters.';
       return '';
     },
     description: function (v) {
       v = v.trim();
       if (!v) return 'Description is required.';
       if (v.length < 10) return 'Description must be at least 10 characters.';
+      if (v.length > 1000) return 'Description cannot exceed 1000 characters.';
       return '';
     },
     category: function (v) { return v ? '' : 'Please choose a category.'; },
@@ -72,7 +76,7 @@
     image: function () {
       const file = document.getElementById('image').files[0];
       if (!file) return '';
-      if (IMAGE_TYPES.indexOf(file.type) === -1) return 'Image must be a PNG, JPG or WebP file.';
+      if (IMAGE_TYPES.indexOf(file.type) === -1 || !IMAGE_EXTENSIONS.test(file.name)) return 'Image must be a PNG, JPG or WebP file.';
       if (file.size > MAX_IMAGE_BYTES) return 'Image must be 2 MB or smaller.';
       return '';
     }
@@ -122,6 +126,7 @@
 
   form.addEventListener('submit', async function (e) {
     e.preventDefault();
+    if (submitting) return;
     const results = Object.keys(validators).map(validateField);
     if (results.indexOf(false) !== -1) {
       const firstInvalid = form.querySelector('.invalid input, .invalid select, .invalid textarea');
@@ -139,7 +144,9 @@
     const file = document.getElementById('image').files[0];
     if (file) data.append('image', file);
 
+    submitting = true;
     submitBtn.disabled = true;
+    submitBtn.setAttribute('aria-busy', 'true');
     submitBtn.textContent = isEdit ? 'Saving…' : 'Creating…';
     setFormStatus('');
     try {
@@ -155,18 +162,32 @@
       if (err.status === 401) return;
       const fieldErrors = err.data && err.data.errors;
       const apiToField = { product_name: 'name', category_id: 'category', stock_quantity: 'stock' };
+      const unmapped = [];
+      let firstInvalid = null;
       if (fieldErrors && typeof fieldErrors === 'object') {
         Object.keys(fieldErrors).forEach(function (key) {
           const name = apiToField[key] || key;
           const errEl = document.getElementById(name + '-error');
           const input = form.elements[name];
-          if (!errEl || !input) return;
+          if (!errEl || !input) { unmapped.push(String(fieldErrors[key])); return; }
           errEl.textContent = String(fieldErrors[key]);
           input.closest('.field').classList.add('invalid');
           input.setAttribute('aria-invalid', 'true');
+          if (!firstInvalid) firstInvalid = input;
         });
+      } else if (err.status === 413 || /image/i.test(err.message || '')) {
+        // Upload errors (type/size) come back as a plain message, not per-field errors.
+        document.getElementById('image-error').textContent = err.message;
+        form.elements.image.closest('.field').classList.add('invalid');
+        form.elements.image.setAttribute('aria-invalid', 'true');
+        firstInvalid = form.elements.image;
       }
-      setFormStatus(err.message || 'Could not save the product.', true);
+      setFormStatus(firstInvalid
+        ? 'Please fix the highlighted fields.' + (unmapped.length ? ' ' + unmapped.join(' ') : '')
+        : (err.message || 'Could not save the product.'), true);
+      if (firstInvalid) firstInvalid.focus();
+      submitting = false;
+      submitBtn.removeAttribute('aria-busy');
       submitBtn.disabled = false;
       submitBtn.textContent = isEdit ? 'Save changes' : 'Save product';
     }

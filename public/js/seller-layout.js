@@ -25,8 +25,7 @@
     aside.innerHTML =
       '<div class="sidebar__brand">Marketplace</div>' +
       '<div class="sidebar__sub">Seller Portal</div>' +
-      '<ul class="sidebar__nav">' + items + '</ul>' +
-      '<p class="sidebar__foot">Day 1 preview &middot; mock data only</p>';
+      '<ul class="sidebar__nav">' + items + '</ul>';
 
     const toggle = document.getElementById('menu-toggle');
     if (toggle) {
