@@ -19,7 +19,24 @@
         </div>
       </header>
 
-      <p class="sub" id="report-status" role="status"></p>
+      <form class="toolbar" id="range-form" aria-label="Report period" novalidate>
+        <div class="field">
+          <label for="range-from">From</label>
+          <input type="date" id="range-from" name="from">
+        </div>
+        <div class="field">
+          <label for="range-to">To</label>
+          <input type="date" id="range-to" name="to">
+        </div>
+        <div class="field">
+          <button type="submit" class="btn btn--primary">Apply</button>
+        </div>
+        <div class="field">
+          <button type="button" class="btn btn--secondary" id="range-clear">All time</button>
+        </div>
+      </form>
+
+      <p class="sub" id="report-status" role="status" aria-live="polite"></p>
 
       <section aria-label="Sales summary" class="stat-grid" id="stats"></section>
 
