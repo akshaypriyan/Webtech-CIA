@@ -368,11 +368,218 @@ async function updateAdminPermissions(req, res, next) {
   }
 }
 
+/**
+ * In-memory platform settings store (with default system parameters)
+ */
+let systemSettingsStore = {
+  site_name: 'MarketHub',
+  support_email: 'support@market.com',
+  commission_fee_rate: 5.0,
+  currency: 'USD',
+  jwt_expiration: '7d',
+  max_login_attempts: 5,
+  maintenance_mode: false,
+  last_backup: new Date().toISOString()
+};
+
+/**
+ * @desc    Get chronological system audit logs with filters (user, action, date, search)
+ * @route   GET /api/superadmin/logs
+ * @access  Private (Super Admin)
+ */
+async function getSystemLogs(req, res, next) {
+  try {
+    const { action, role, search, startDate, endDate, limit, page } = req.query;
+
+    let sql = `
+      SELECT 
+        l.log_id,
+        l.user_id,
+        l.action,
+        l.description,
+        l.ip_address,
+        l.created_at,
+        u.name AS user_name,
+        u.email AS user_email,
+        u.role AS user_role
+      FROM system_logs l
+      LEFT JOIN users u ON l.user_id = u.user_id
+      WHERE 1=1
+    `;
+    const params = [];
+
+    // Filter by action verb
+    if (action && action !== 'ALL') {
+      sql += ' AND l.action = ?';
+      params.push(action);
+    }
+
+    // Filter by role
+    if (role && role !== 'ALL') {
+      if (role === 'System') {
+        sql += ' AND (u.role IS NULL OR l.user_id IS NULL)';
+      } else {
+        sql += ' AND u.role = ?';
+        params.push(role);
+      }
+    }
+
+    // Filter by date range
+    if (startDate) {
+      sql += ' AND l.created_at >= ?';
+      params.push(new Date(startDate));
+    }
+    if (endDate) {
+      sql += ' AND l.created_at <= ?';
+      params.push(new Date(endDate));
+    }
+
+    // Full-text search on description, action, IP, or user email
+    if (search && search.trim()) {
+      sql += ' AND (l.description LIKE ? OR l.action LIKE ? OR l.ip_address LIKE ? OR u.email LIKE ? OR u.name LIKE ?)';
+      const term = `%${search.trim()}%`;
+      params.push(term, term, term, term, term);
+    }
+
+    sql += ' ORDER BY l.log_id DESC';
+
+    // Pagination
+    const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 100, 1), 500);
+    const parsedPage = Math.max(parseInt(page, 10) || 1, 1);
+    const offset = (parsedPage - 1) * parsedLimit;
+
+    sql += ` LIMIT ${parsedLimit} OFFSET ${offset}`;
+
+    const [rows] = await pool.execute(sql, params);
+
+    // Get total logs count
+    const [[{ total_count }]] = await pool.execute('SELECT COUNT(*) as total_count FROM system_logs');
+
+    return sendSuccess(res, 'System audit logs retrieved successfully', {
+      logs: rows,
+      total_count,
+      page: parsedPage,
+      limit: parsedLimit
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * @desc    Get current global platform settings
+ * @route   GET /api/superadmin/settings
+ * @access  Private (Super Admin)
+ */
+async function getSettings(req, res, next) {
+  try {
+    return sendSuccess(res, 'Platform settings retrieved successfully', systemSettingsStore);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * @desc    Update global platform settings and record audit log
+ * @route   PUT /api/superadmin/settings
+ * @access  Private (Super Admin)
+ */
+async function updateSettings(req, res, next) {
+  try {
+    const {
+      site_name,
+      support_email,
+      commission_fee_rate,
+      currency,
+      jwt_expiration,
+      max_login_attempts,
+      maintenance_mode
+    } = req.body;
+
+    if (site_name !== undefined) systemSettingsStore.site_name = String(site_name).trim();
+    if (support_email !== undefined) systemSettingsStore.support_email = String(support_email).trim();
+    if (commission_fee_rate !== undefined) {
+      const rate = parseFloat(commission_fee_rate);
+      if (!isNaN(rate) && rate >= 0 && rate <= 50) {
+        systemSettingsStore.commission_fee_rate = rate;
+      }
+    }
+    if (currency !== undefined) systemSettingsStore.currency = String(currency).trim();
+    if (jwt_expiration !== undefined) systemSettingsStore.jwt_expiration = String(jwt_expiration);
+    if (max_login_attempts !== undefined) {
+      const attempts = parseInt(max_login_attempts, 10);
+      if (!isNaN(attempts) && attempts > 0) {
+        systemSettingsStore.max_login_attempts = attempts;
+      }
+    }
+    if (maintenance_mode !== undefined) {
+      systemSettingsStore.maintenance_mode = Boolean(maintenance_mode);
+    }
+
+    systemSettingsStore.last_updated = new Date().toISOString();
+
+    // Record audit trail
+    if (req.logAudit) {
+      await req.logAudit(
+        'SETTINGS_UPDATE',
+        `Super Admin updated platform settings: Fee=${systemSettingsStore.commission_fee_rate}%, Maintenance=${systemSettingsStore.maintenance_mode}`
+      );
+    }
+
+    return sendSuccess(res, 'Platform settings updated successfully.', systemSettingsStore);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * @desc    Get high-privilege system statistics and recent security events for super admin console
+ * @route   GET /api/superadmin/stats
+ * @access  Private (Super Admin)
+ */
+async function getSuperAdminStats(req, res, next) {
+  try {
+    const [[adminsCount]] = await pool.execute('SELECT COUNT(*) as count FROM users WHERE role = "Admin" AND status = "Active"');
+    const [[logsCount]] = await pool.execute('SELECT COUNT(*) as count FROM system_logs');
+    const [[usersCount]] = await pool.execute('SELECT COUNT(*) as count FROM users');
+
+    // Fetch top 5 recent critical security and governance logs
+    const [recentLogs] = await pool.execute(`
+      SELECT 
+        l.log_id,
+        l.action,
+        l.description,
+        l.ip_address,
+        l.created_at,
+        u.email AS user_email
+      FROM system_logs l
+      LEFT JOIN users u ON l.user_id = u.user_id
+      ORDER BY l.log_id DESC
+      LIMIT 5
+    `);
+
+    return sendSuccess(res, 'Super admin console metrics retrieved', {
+      active_admins: adminsCount.count,
+      total_logs: logsCount.count,
+      total_users: usersCount.count,
+      system_status: 'Healthy',
+      db_status: 'Connected',
+      recent_events: recentLogs
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   getAdmins,
   createAdmin,
   updateAdminStatus,
   deleteAdmin,
   getAdminPermissions,
-  updateAdminPermissions
+  updateAdminPermissions,
+  getSystemLogs,
+  getSettings,
+  updateSettings,
+  getSuperAdminStats
 };

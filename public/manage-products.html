@@ -77,18 +77,42 @@
   <script>
     requireRole('Admin', 'Super Admin');
 
-    let products = [
-      { product_id: 101, name: 'Wireless Noise-Cancelling Headphones', category: 'Electronics', seller: 'Nova Tech Retailers', price: 149.99, stock: 45, status: 'Active' },
-      { product_id: 102, name: 'Organic Cotton Crewneck T-Shirt', category: 'Fashion', seller: 'Urban Threads Studio', price: 29.50, stock: 120, status: 'Active' },
-      { product_id: 103, name: 'Precision Ergonomic Gaming Mouse', category: 'Electronics', seller: 'Nova Tech Retailers', price: 59.00, stock: 32, status: 'Active' },
-      { product_id: 104, name: 'Designer Replicas Luxury Handbag', category: 'Fashion', seller: 'Urban Threads Studio', price: 399.00, stock: 2, status: 'Flagged' },
-      { product_id: 105, name: 'Stainless Steel Insulated Water Bottle', category: 'Sports', seller: 'Apex Gear Direct', price: 24.99, stock: 0, status: 'Inactive' }
-    ];
+    let products = [];
 
     const tbody = document.getElementById('products-table-body');
     const searchInput = document.getElementById('product-search-input');
     const categoryFilter = document.getElementById('product-category-filter');
     const statusFilter = document.getElementById('product-status-filter');
+
+    async function loadCategoriesFilter() {
+      try {
+        const res = await apiFetch('/categories');
+        if (res && res.data && Array.isArray(res.data)) {
+          categoryFilter.innerHTML = '<option value="ALL">All Categories</option>' + 
+            res.data.map(c => `<option value="${escapeHtml(c.category_name)}">${escapeHtml(c.category_name)}</option>`).join('');
+        }
+      } catch (e) {
+        // Fallback to existing options
+      }
+    }
+
+    async function loadProducts() {
+      try {
+        const queryParams = new URLSearchParams();
+        if (statusFilter.value !== 'ALL') queryParams.append('status', statusFilter.value);
+        if (categoryFilter.value !== 'ALL') queryParams.append('category_id', categoryFilter.value);
+        if (searchInput.value.trim()) queryParams.append('search', searchInput.value.trim());
+
+        const endpoint = `/admin/products${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+        const res = await apiFetch(endpoint);
+        if (res && res.data) {
+          products = res.data;
+        }
+      } catch (err) {
+        console.warn('API error loading products, using cached state:', err.message);
+      }
+      renderProducts();
+    }
 
     function renderProducts() {
       const q = searchInput.value.toLowerCase().trim();
@@ -96,8 +120,10 @@
       const status = statusFilter.value;
 
       const filtered = products.filter(p => {
-        const matchesQuery = p.name.toLowerCase().includes(q) || p.seller.toLowerCase().includes(q) || String(p.product_id).includes(q);
-        const matchesCategory = cat === 'ALL' || p.category === cat;
+        const matchesQuery = (p.product_name && p.product_name.toLowerCase().includes(q)) || 
+                             (p.seller_name && p.seller_name.toLowerCase().includes(q)) || 
+                             String(p.product_id).includes(q);
+        const matchesCategory = cat === 'ALL' || (p.category_name === cat);
         const matchesStatus = status === 'ALL' || p.status === status;
         return matchesQuery && matchesCategory && matchesStatus;
       });
@@ -105,7 +131,7 @@
       document.getElementById('product-count').textContent = filtered.length;
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-muted">No products found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-muted">No products found matching filters.</td></tr>`;
         return;
       }
 
@@ -113,13 +139,17 @@
         <tr>
           <td><span class="font-mono text-muted text-sm">#${p.product_id}</span></td>
           <td>
-            <div class="font-bold">${escapeHtml(p.name)}</div>
+            <div class="font-bold">${escapeHtml(p.product_name)}</div>
+            <div class="text-xs text-muted">Rating: ${Number(p.average_rating || 0).toFixed(1)} ⭐ (${p.review_count || 0})</div>
           </td>
-          <td><span class="badge badge-secondary">${escapeHtml(p.category)}</span></td>
-          <td><span class="text-muted text-sm">${escapeHtml(p.seller)}</span></td>
+          <td><span class="badge badge-secondary">${escapeHtml(p.category_name || 'Uncategorized')}</span></td>
           <td>
-            <div class="font-bold">$${p.price.toFixed(2)}</div>
-            <div class="text-xs text-muted">${p.stock} units</div>
+            <span class="text-sm font-semibold">${escapeHtml(p.seller_name || 'Seller')}</span>
+            <div class="text-xs text-muted">${escapeHtml(p.seller_email || '')}</div>
+          </td>
+          <td>
+            <div class="font-bold">$${Number(p.price).toFixed(2)}</div>
+            <div class="text-xs text-muted">${p.stock_quantity} in stock</div>
           </td>
           <td>
             <span class="badge ${p.status === 'Active' ? 'badge-success' : (p.status === 'Flagged' ? 'badge-warning' : 'badge-danger')}">
@@ -139,22 +169,33 @@
       `).join('');
     }
 
-    window.setProductStatus = function(id, newStatus) {
-      const p = products.find(prod => prod.product_id === id);
-      if (!p) return;
-      p.status = newStatus;
-      showToast(`Product #${id} updated to ${newStatus}`, newStatus === 'Active' ? 'success' : 'warning');
-      renderProducts();
+    window.setProductStatus = async function(id, newStatus) {
+      try {
+        await apiFetch(`/admin/products/${id}/status`, {
+          method: 'PUT',
+          body: { status: newStatus }
+        });
+        showToast(`Product #${id} updated to ${newStatus}`, newStatus === 'Active' ? 'success' : 'warning');
+        await loadProducts();
+      } catch (err) {
+        showToast(err.message || 'Failed to update product status', 'error');
+      }
     };
 
     function escapeHtml(str) {
       return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
-    searchInput.addEventListener('input', renderProducts);
-    categoryFilter.addEventListener('change', renderProducts);
-    statusFilter.addEventListener('change', renderProducts);
-    renderProducts();
+    let searchDebounce;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(loadProducts, 300);
+    });
+    categoryFilter.addEventListener('change', loadProducts);
+    statusFilter.addEventListener('change', loadProducts);
+
+    loadCategoriesFilter();
+    loadProducts();
   </script>
 </body>
 </html>

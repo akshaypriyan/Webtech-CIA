@@ -82,19 +82,30 @@
   <script>
     requireRole('Super Admin');
 
-    let logs = [
-      { log_id: 1042, created_at: '2026-10-30 22:45:10', user_name: 'superadmin@market.com', role: 'Super Admin', action: 'ADMIN_CREATE', description: 'Created new Admin account for Sarah Connor', ip_address: '127.0.0.1' },
-      { log_id: 1041, created_at: '2026-10-30 22:30:15', user_name: 'admin@market.com', role: 'Admin', action: 'SELLER_APPROVE', description: 'Approved merchant registration for Nova Tech Retailers', ip_address: '127.0.0.1' },
-      { log_id: 1040, created_at: '2026-10-30 21:15:42', user_name: 'admin@market.com', role: 'Admin', action: 'CATEGORY_CREATE', description: 'Created category "Electronics" (ID: 1)', ip_address: '127.0.0.1' },
-      { log_id: 1039, created_at: '2026-10-30 20:55:00', user_name: 'admin@market.com', role: 'Admin', action: 'CATEGORY_CREATE', description: 'Created category "Fashion" (ID: 2)', ip_address: '127.0.0.1' },
-      { log_id: 1038, created_at: '2026-10-30 19:10:22', user_name: 'superadmin@market.com', role: 'Super Admin', action: 'SETTINGS_UPDATE', description: 'Updated commission transaction fee to 5.0%', ip_address: '192.168.1.10' },
-      { log_id: 1037, created_at: '2026-10-30 18:02:11', user_name: 'guest', role: 'System', action: 'LOGIN_FAILED', description: 'Failed authentication attempt for unknown email', ip_address: '45.12.98.11' }
-    ];
+    let logs = [];
 
     const tbody = document.getElementById('logs-table-body');
     const searchInput = document.getElementById('log-search-input');
     const actionFilter = document.getElementById('log-action-filter');
     const roleFilter = document.getElementById('log-role-filter');
+
+    async function loadLogs() {
+      try {
+        const queryParams = new URLSearchParams();
+        if (actionFilter.value !== 'ALL') queryParams.append('action', actionFilter.value);
+        if (roleFilter.value !== 'ALL') queryParams.append('role', roleFilter.value);
+        if (searchInput.value.trim()) queryParams.append('search', searchInput.value.trim());
+
+        const endpoint = `/superadmin/logs${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+        const res = await apiFetch(endpoint);
+        if (res && res.data && res.data.logs) {
+          logs = res.data.logs;
+        }
+      } catch (err) {
+        console.warn('API error loading logs, using cached state:', err.message);
+      }
+      renderLogs();
+    }
 
     function renderLogs() {
       const q = searchInput.value.toLowerCase().trim();
@@ -102,12 +113,13 @@
       const role = roleFilter.value;
 
       const filtered = logs.filter(l => {
-        const matchesQuery = l.description.toLowerCase().includes(q) || 
-                             l.action.toLowerCase().includes(q) || 
+        const matchesQuery = (l.description && l.description.toLowerCase().includes(q)) || 
+                             (l.action && l.action.toLowerCase().includes(q)) || 
                              (l.ip_address && l.ip_address.includes(q)) ||
-                             l.user_name.toLowerCase().includes(q);
+                             (l.user_email && l.user_email.toLowerCase().includes(q)) ||
+                             (l.user_name && l.user_name.toLowerCase().includes(q));
         const matchesAction = action === 'ALL' || l.action === action;
-        const matchesRole = role === 'ALL' || l.role === role;
+        const matchesRole = role === 'ALL' || (l.user_role === role) || (role === 'System' && !l.user_role);
         return matchesQuery && matchesAction && matchesRole;
       });
 
@@ -118,36 +130,46 @@
         return;
       }
 
-      tbody.innerHTML = filtered.map(l => `
-        <tr>
-          <td><span class="font-mono text-muted text-sm">#${l.log_id}</span></td>
-          <td class="text-sm text-muted">${l.created_at}</td>
-          <td>
-            <div class="font-bold text-sm">${escapeHtml(l.user_name)}</div>
-            <span class="badge ${l.role === 'Super Admin' ? 'badge-danger' : (l.role === 'Admin' ? 'badge-warning' : 'badge-secondary')}" style="font-size: 0.65rem;">
-              ${l.role}
-            </span>
-          </td>
-          <td><span class="code-badge">${escapeHtml(l.action)}</span></td>
-          <td class="text-sm">${escapeHtml(l.description)}</td>
-          <td style="text-align: right;"><span class="font-mono text-xs text-muted">${escapeHtml(l.ip_address || '—')}</span></td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = filtered.map(l => {
+        const dateStr = l.created_at ? new Date(l.created_at).toLocaleString() : '—';
+        const displayUser = l.user_email || l.user_name || 'System / Anonymous';
+        const displayRole = l.user_role || 'System';
+        return `
+          <tr>
+            <td><span class="font-mono text-muted text-sm">#${l.log_id}</span></td>
+            <td class="text-sm text-muted">${dateStr}</td>
+            <td>
+              <div class="font-bold text-sm">${escapeHtml(displayUser)}</div>
+              <span class="badge ${displayRole === 'Super Admin' ? 'badge-danger' : (displayRole === 'Admin' ? 'badge-warning' : 'badge-secondary')}" style="font-size: 0.65rem;">
+                ${displayRole}
+              </span>
+            </td>
+            <td><span class="code-badge">${escapeHtml(l.action)}</span></td>
+            <td class="text-sm">${escapeHtml(l.description)}</td>
+            <td style="text-align: right;"><span class="font-mono text-xs text-muted">${escapeHtml(l.ip_address || '—')}</span></td>
+          </tr>
+        `;
+      }).join('');
     }
 
     document.getElementById('refresh-logs-btn').addEventListener('click', () => {
-      showToast('Refreshing latest system logs...', 'info', 1500);
-      renderLogs();
+      showToast('Refreshing latest system logs...', 'info', 1000);
+      loadLogs();
     });
 
     function escapeHtml(str) {
       return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
-    searchInput.addEventListener('input', renderLogs);
-    actionFilter.addEventListener('change', renderLogs);
-    roleFilter.addEventListener('change', renderLogs);
-    renderLogs();
+    let searchDebounce;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(loadLogs, 300);
+    });
+    actionFilter.addEventListener('change', loadLogs);
+    roleFilter.addEventListener('change', loadLogs);
+
+    loadLogs();
   </script>
 </body>
 </html>

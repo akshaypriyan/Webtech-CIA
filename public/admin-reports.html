@@ -35,8 +35,8 @@
           <div class="stat-icon emerald">💰</div>
           <div class="stat-info">
             <span class="stat-label">Gross Sales (GMV)</span>
-            <span class="stat-value">$48,250.00</span>
-            <span class="stat-meta text-success">↑ 18.4% vs last period</span>
+            <span class="stat-value" id="rep-gmv">$0.00</span>
+            <span class="stat-meta text-success">Total marketplace sales</span>
           </div>
         </div>
 
@@ -44,8 +44,8 @@
           <div class="stat-icon indigo">🏦</div>
           <div class="stat-info">
             <span class="stat-label">Platform Fees (5%)</span>
-            <span class="stat-value">$2,412.50</span>
-            <span class="stat-meta">Net platform earnings</span>
+            <span class="stat-value" id="rep-fees">$0.00</span>
+            <span class="stat-meta">Net platform commission</span>
           </div>
         </div>
 
@@ -53,8 +53,8 @@
           <div class="stat-icon sky">📦</div>
           <div class="stat-info">
             <span class="stat-label">Orders Completed</span>
-            <span class="stat-value">634</span>
-            <span class="stat-meta">Avg $76.10 / order</span>
+            <span class="stat-value" id="rep-orders">0</span>
+            <span class="stat-meta" id="rep-aov">Avg $0.00 / order</span>
           </div>
         </div>
 
@@ -62,8 +62,8 @@
           <div class="stat-icon amber">⭐</div>
           <div class="stat-info">
             <span class="stat-label">Customer Satisfaction</span>
-            <span class="stat-value">4.8 / 5.0</span>
-            <span class="stat-meta">Based on 312 reviews</span>
+            <span class="stat-value" id="rep-satisfaction">5.0 / 5.0</span>
+            <span class="stat-meta" id="rep-reviews">Based on customer reviews</span>
           </div>
         </div>
       </div>
@@ -77,58 +77,8 @@
             <h3 class="font-bold">Top Performing Categories</h3>
           </div>
           <div class="card-body">
-            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
-              
-              <div>
-                <div class="flex justify-between text-sm font-semibold mb-1">
-                  <span>Consumer Electronics</span>
-                  <span>$22,195.00 (46%)</span>
-                </div>
-                <div style="height: 8px; background: var(--neutral-100); border-radius: 4px; overflow: hidden;">
-                  <div style="width: 46%; height: 100%; background: var(--primary);"></div>
-                </div>
-              </div>
-
-              <div>
-                <div class="flex justify-between text-sm font-semibold mb-1">
-                  <span>Fashion & Apparel</span>
-                  <span>$12,545.00 (26%)</span>
-                </div>
-                <div style="height: 8px; background: var(--neutral-100); border-radius: 4px; overflow: hidden;">
-                  <div style="width: 26%; height: 100%; background: var(--secondary);"></div>
-                </div>
-              </div>
-
-              <div>
-                <div class="flex justify-between text-sm font-semibold mb-1">
-                  <span>Home & Kitchen</span>
-                  <span>$6,755.00 (14%)</span>
-                </div>
-                <div style="height: 8px; background: var(--neutral-100); border-radius: 4px; overflow: hidden;">
-                  <div style="width: 14%; height: 100%; background: var(--accent);"></div>
-                </div>
-              </div>
-
-              <div>
-                <div class="flex justify-between text-sm font-semibold mb-1">
-                  <span>Sports & Outdoors</span>
-                  <span>$4,335.00 (9%)</span>
-                </div>
-                <div style="height: 8px; background: var(--neutral-100); border-radius: 4px; overflow: hidden;">
-                  <div style="width: 9%; height: 100%; background: var(--success);"></div>
-                </div>
-              </div>
-
-              <div>
-                <div class="flex justify-between text-sm font-semibold mb-1">
-                  <span>Books & Stationery</span>
-                  <span>$2,420.00 (5%)</span>
-                </div>
-                <div style="height: 8px; background: var(--neutral-100); border-radius: 4px; overflow: hidden;">
-                  <div style="width: 5%; height: 100%; background: var(--neutral-400);"></div>
-                </div>
-              </div>
-
+            <div id="rep-categories-list" style="display: flex; flex-direction: column; gap: 1.25rem;">
+              <div class="text-center text-muted py-4">Loading category breakdown...</div>
             </div>
           </div>
         </div>
@@ -148,27 +98,8 @@
                     <th>Volume</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <tr>
-                    <td><strong>Nova Tech Retailers</strong></td>
-                    <td>248</td>
-                    <td class="font-bold text-success">$19,840.00</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Urban Threads Studio</strong></td>
-                    <td>164</td>
-                    <td class="font-bold text-success">$11,200.00</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Apex Gear Direct</strong></td>
-                    <td>112</td>
-                    <td class="font-bold text-success">$8,960.00</td>
-                  </tr>
-                  <tr>
-                    <td><strong>KitchenCraft Essentials</strong></td>
-                    <td>82</td>
-                    <td class="font-bold text-success">$5,450.00</td>
-                  </tr>
+                <tbody id="rep-sellers-tbody">
+                  <tr><td colspan="3" class="text-center text-muted py-4">Loading top merchants...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -186,6 +117,63 @@
   <script>
     requireRole('Admin', 'Super Admin');
 
+    async function loadReports() {
+      try {
+        const res = await apiFetch('/admin/reports');
+        if (res && res.data) {
+          const d = res.data;
+          document.getElementById('rep-gmv').textContent = `$${d.gmv.toFixed(2)}`;
+          document.getElementById('rep-fees').textContent = `$${d.platform_fees.toFixed(2)}`;
+          document.getElementById('rep-orders').textContent = d.total_orders;
+          document.getElementById('rep-aov').textContent = `Avg $${d.avg_order_value.toFixed(2)} / order`;
+          document.getElementById('rep-satisfaction').textContent = `${d.customer_satisfaction.toFixed(1)} / 5.0`;
+          document.getElementById('rep-reviews').textContent = `Based on ${d.total_reviews} reviews`;
+
+          // Categories Breakdown
+          const catContainer = document.getElementById('rep-categories-list');
+          if (d.categories_breakdown && d.categories_breakdown.length > 0) {
+            const colors = ['var(--primary)', 'var(--secondary)', 'var(--accent)', 'var(--success)', 'var(--neutral-400)', 'var(--danger)'];
+            catContainer.innerHTML = d.categories_breakdown.map((cat, idx) => `
+              <div>
+                <div class="flex justify-between text-sm font-semibold mb-1">
+                  <span>${escapeHtml(cat.category_name)}</span>
+                  <span>$${cat.revenue.toFixed(2)} (${cat.percentage_share}%)</span>
+                </div>
+                <div style="height: 8px; background: var(--neutral-100); border-radius: 4px; overflow: hidden;">
+                  <div style="width: ${Math.max(cat.percentage_share, 4)}%; height: 100%; background: ${colors[idx % colors.length]};"></div>
+                </div>
+              </div>
+            `).join('');
+          } else {
+            catContainer.innerHTML = '<div class="text-muted text-center py-4">No sales data recorded yet.</div>';
+          }
+
+          // Top Merchants
+          const sellerTbody = document.getElementById('rep-sellers-tbody');
+          if (d.top_sellers && d.top_sellers.length > 0) {
+            sellerTbody.innerHTML = d.top_sellers.map(s => `
+              <tr>
+                <td>
+                  <strong>${escapeHtml(s.seller_name)}</strong>
+                  <div class="text-xs text-muted">${escapeHtml(s.seller_email)}</div>
+                </td>
+                <td>${s.orders_count}</td>
+                <td class="font-bold text-success">$${s.sales_volume.toFixed(2)}</td>
+              </tr>
+            `).join('');
+          } else {
+            sellerTbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4">No merchant sales data recorded yet.</td></tr>';
+          }
+        }
+      } catch (err) {
+        console.warn('API error loading reports, fallback to defaults:', err.message);
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
     window.exportReport = function() {
       showToast('Generating sales report export...', 'info');
       setTimeout(() => {
@@ -195,7 +183,10 @@
 
     document.getElementById('report-period').addEventListener('change', (e) => {
       showToast(`Refreshed analytics for period: ${e.target.options[e.target.selectedIndex].text}`, 'info');
+      loadReports();
     });
+
+    loadReports();
   </script>
 </body>
 </html>
