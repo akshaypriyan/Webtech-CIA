@@ -12,6 +12,9 @@ router.get('/', addressController.getUserAddresses);
 // POST /api/addresses - Save a new shipping address
 router.post('/', addressController.addAddress);
 
+// PATCH /api/addresses/:id/default - Set specified address as default
+router.patch('/:id/default', addressController.setDefaultAddress);
+
 // DELETE /api/addresses/:id - Delete an address
 router.delete('/:id', addressController.deleteAddress);
 

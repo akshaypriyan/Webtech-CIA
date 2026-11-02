@@ -161,6 +161,12 @@
                       <input type="text" id="new-pincode" class="form-input" placeholder="e.g. 560029">
                     </div>
                   </div>
+                  <div class="form-group" style="margin-top: var(--space-3); margin-bottom: var(--space-4);">
+                    <label class="flex items-center gap-2" style="cursor: pointer; font-size: 0.9rem; font-weight: 500; color: var(--neutral-800);">
+                      <input type="checkbox" id="new-is-default" checked style="width: 16px; height: 16px; accent-color: var(--primary);">
+                      <span>⭐ Set as my default shipping address</span>
+                    </label>
+                  </div>
                   <button type="button" class="btn btn-primary btn-sm" onclick="saveNewAddress()">
                     Save & Use This Address
                   </button>
@@ -367,24 +373,39 @@
           return;
         }
 
+        // Determine selected address (prefer default address if present, otherwise first)
+        const defaultAddr = savedAddresses.find(a => a.is_default == 1) || savedAddresses[0];
+        const selectedId = defaultAddr ? defaultAddr.address_id : null;
+
         // Render live user addresses from the database
-        container.innerHTML = savedAddresses.map((addr, idx) => `
-          <label class="address-card ${idx === 0 ? 'selected' : ''}" onclick="selectAddress(${addr.address_id})">
-            <input type="radio" name="shipping_address_id" value="${addr.address_id}" class="address-radio" ${idx === 0 ? 'checked' : ''}>
-            <div style="flex: 1;">
-              <div class="flex items-center justify-between">
-                <strong style="color: var(--neutral-900);">Shipping Address #${addr.address_id}</strong>
-                ${idx === 0 ? '<span class="badge badge-success">Latest</span>' : ''}
+        container.innerHTML = savedAddresses.map((addr) => {
+          const isDef = addr.is_default == 1;
+          const isSelected = addr.address_id === selectedId;
+          return `
+            <label class="address-card ${isSelected ? 'selected' : ''}" onclick="selectAddress(${addr.address_id})">
+              <input type="radio" name="shipping_address_id" value="${addr.address_id}" class="address-radio" ${isSelected ? 'checked' : ''}>
+              <div style="flex: 1;">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                  <div class="flex items-center gap-2">
+                    <strong style="color: var(--neutral-900);">Shipping Address #${addr.address_id}</strong>
+                    ${isDef ? '<span class="badge badge-primary">⭐ Default Address</span>' : ''}
+                  </div>
+                  ${!isDef ? `
+                    <button type="button" class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 2px 8px; height: auto;" onclick="event.stopPropagation(); makeDefaultAddress(${addr.address_id})">
+                      Set as Default
+                    </button>
+                  ` : ''}
+                </div>
+                <p style="margin-top: 6px; margin-bottom: 2px; font-size: 0.92rem; color: var(--neutral-800);">
+                  ${escapeHtml(addr.address_line)}
+                </p>
+                <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 0;">
+                  ${escapeHtml(addr.city)}, ${escapeHtml(addr.state)} &bull; PIN: ${escapeHtml(addr.pincode)}
+                </p>
               </div>
-              <p style="margin-top: 4px; margin-bottom: 2px; font-size: 0.92rem;">
-                ${escapeHtml(addr.address_line)}
-              </p>
-              <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 0;">
-                ${escapeHtml(addr.city)}, ${escapeHtml(addr.state)} &bull; PIN: ${escapeHtml(addr.pincode)}
-              </p>
-            </div>
-          </label>
-        `).join('');
+            </label>
+          `;
+        }).join('');
 
         // Ensure form is collapsed if address exists
         form.style.display = 'none';
@@ -409,9 +430,16 @@
       const city = document.getElementById('new-city').value.trim();
       const state = document.getElementById('new-state').value.trim();
       const pincode = document.getElementById('new-pincode').value.trim();
+      const isDefaultCheckbox = document.getElementById('new-is-default');
+      const isDefault = isDefaultCheckbox ? isDefaultCheckbox.checked : false;
 
       if (!line || !city || !state || !pincode) {
         showToast('Please fill in all address fields.', 'warning');
+        return;
+      }
+
+      if (!/^\d{6}$/.test(pincode)) {
+        showToast('Pincode must be exactly 6 digits.', 'warning');
         return;
       }
 
@@ -428,7 +456,8 @@
             address_line: line,
             city: city,
             state: state,
-            pincode: pincode
+            pincode: pincode,
+            is_default: isDefault
           }
         });
 
@@ -440,7 +469,7 @@
         document.getElementById('new-state').value = '';
         document.getElementById('new-pincode').value = '';
 
-        // Reload addresses from MySQL and select the newly added one
+        // Reload addresses from MySQL and auto-select default
         await loadSavedAddresses();
 
       } catch (err) {
@@ -451,6 +480,17 @@
           saveBtn.disabled = false;
           saveBtn.textContent = 'Save & Use This Address';
         }
+      }
+    }
+
+    async function makeDefaultAddress(addressId) {
+      try {
+        await apiFetch(`/addresses/${addressId}/default`, { method: 'PATCH' });
+        showToast('Default shipping address updated!', 'success');
+        await loadSavedAddresses();
+      } catch (err) {
+        console.error('Failed to update default address:', err);
+        showToast(err.message || 'Failed to update default address.', 'error');
       }
     }
 
