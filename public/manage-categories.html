@@ -107,7 +107,7 @@
   <script src="js/navbar.js"></script>
   <script>
     // Guard page access
-    requireRole('Admin', 'Super Admin');
+    const user = requireRole('Admin', 'Super Admin');
 
     // Default mock data in case API is offline or database is fresh
     let categoriesList = [
@@ -128,6 +128,7 @@
 
     // Fetch live categories from API with fallback
     async function loadCategories() {
+      if (!user) return;
       try {
         const res = await apiFetch('/categories');
         if (res && res.data && Array.isArray(res.data)) {
@@ -267,11 +268,13 @@
         .replace(/'/g, '&#039;');
     }
 
-    searchInput.addEventListener('input', renderCategories);
-    statusFilter.addEventListener('change', renderCategories);
+    if (user) {
+      searchInput.addEventListener('input', renderCategories);
+      statusFilter.addEventListener('change', renderCategories);
 
-    // Initial load
-    loadCategories();
+      // Initial load
+      loadCategories();
+    }
   </script>
 </body>
 </html>

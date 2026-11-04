@@ -75,7 +75,7 @@
   <script src="js/api.js"></script>
   <script src="js/navbar.js"></script>
   <script>
-    requireRole('Admin', 'Super Admin');
+    const user = requireRole('Admin', 'Super Admin');
 
     let products = [];
 
@@ -85,6 +85,7 @@
     const statusFilter = document.getElementById('product-status-filter');
 
     async function loadCategoriesFilter() {
+      if (!user) return;
       try {
         const res = await apiFetch('/categories');
         if (res && res.data && Array.isArray(res.data)) {
@@ -97,6 +98,7 @@
     }
 
     async function loadProducts() {
+      if (!user) return;
       try {
         const queryParams = new URLSearchParams();
         if (statusFilter.value !== 'ALL') queryParams.append('status', statusFilter.value);
@@ -186,16 +188,18 @@
       return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
-    let searchDebounce;
-    searchInput.addEventListener('input', () => {
-      clearTimeout(searchDebounce);
-      searchDebounce = setTimeout(loadProducts, 300);
-    });
-    categoryFilter.addEventListener('change', loadProducts);
-    statusFilter.addEventListener('change', loadProducts);
+    if (user) {
+      let searchDebounce;
+      searchInput.addEventListener('input', () => {
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(loadProducts, 300);
+      });
+      categoryFilter.addEventListener('change', loadProducts);
+      statusFilter.addEventListener('change', loadProducts);
 
-    loadCategoriesFilter();
-    loadProducts();
+      loadCategoriesFilter();
+      loadProducts();
+    }
   </script>
 </body>
 </html>

@@ -118,7 +118,7 @@
   <script src="js/api.js"></script>
   <script src="js/navbar.js"></script>
   <script>
-    requireRole('Super Admin');
+    const user = requireRole('Super Admin');
 
     let admins = [];
 
@@ -129,6 +129,7 @@
     const form = document.getElementById('admin-form');
 
     async function loadAdmins() {
+      if (!user) return;
       try {
         const queryParams = new URLSearchParams();
         if (statusFilter.value !== 'ALL') queryParams.append('status', statusFilter.value);
@@ -290,13 +291,15 @@
       return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
-    let searchDebounce;
-    searchInput.addEventListener('input', () => {
-      clearTimeout(searchDebounce);
-      searchDebounce = setTimeout(loadAdmins, 300);
-    });
-    statusFilter.addEventListener('change', loadAdmins);
-    loadAdmins();
+    if (user) {
+      let searchDebounce;
+      searchInput.addEventListener('input', () => {
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(loadAdmins, 300);
+      });
+      statusFilter.addEventListener('change', loadAdmins);
+      loadAdmins();
+    }
   </script>
 </body>
 </html>
