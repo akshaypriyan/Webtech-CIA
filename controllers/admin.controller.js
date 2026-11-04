@@ -453,10 +453,15 @@ async function updateOrderStatus(req, res, next) {
       [status, orderId]
     );
 
-    // If order was cancelled by admin, cascade item status to Cancelled as well
+    // If order status is updated by admin, cascade item status as well
     if (status === 'Cancelled') {
       await pool.execute(
         'UPDATE order_items SET item_status = "Cancelled" WHERE order_id = ?',
+        [orderId]
+      );
+    } else if (status === 'Processing') {
+      await pool.execute(
+        'UPDATE order_items SET item_status = "Processing" WHERE order_id = ? AND item_status = "Pending"',
         [orderId]
       );
     }

@@ -8,7 +8,8 @@
     "dev": "nodemon server.js",
     "seed": "node scripts/seedUsers.js",
     "test": "node test_auth_suite.js",
-    "test:day3": "node test_day3_suite.js"
+    "test:day3": "node test_day3_suite.js",
+    "test:day4": "node test_day4_rehearsal.js"
   },
   "keywords": [
     "ecommerce",

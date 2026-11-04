@@ -20,6 +20,7 @@
           <p class="admin-subtitle">Root administrative privileges. Platform security, administrative role delegation, and global audit trails.</p>
         </div>
         <div class="flex gap-3">
+          <a href="admin-dashboard.html" class="btn btn-outline btn-sm">📊 Admin Operations</a>
           <a href="manage-admins.html" class="btn btn-primary btn-sm">➕ Create Admin</a>
           <a href="system-logs.html" class="btn btn-secondary btn-sm">📜 Audit Logs</a>
         </div>
@@ -171,6 +172,7 @@
     const user = requireRole('Super Admin');
 
     async function loadSuperAdminStats() {
+      if (!user) return;
       try {
         const res = await apiFetch('/superadmin/stats');
         if (res && res.data) {
@@ -207,6 +209,9 @@
       return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
-    loadSuperAdminStats();
+    if (user) {
+      loadSuperAdminStats();
+    }
+  </script>
 </body>
 </html>

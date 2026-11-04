@@ -137,7 +137,7 @@
           </div>
         </div>
 
-        <div class="card card-hover">
+        <div id="superadmin-card" class="card card-hover">
           <div class="card-body">
             <div class="flex items-center gap-3 mb-3">
               <span style="font-size: 1.75rem;">👑</span>
@@ -215,10 +215,15 @@
     const user = requireRole('Admin', 'Super Admin');
     if (user) {
       document.getElementById('admin-name').textContent = user.name || 'Administrator';
+      if (user.role !== 'Super Admin') {
+        const saCard = document.getElementById('superadmin-card');
+        if (saCard) saCard.style.display = 'none';
+      }
     }
 
     // Load live platform stats from Admin API
     (async function initDashboard() {
+      if (!user) return;
       try {
         const res = await apiFetch('/admin/stats');
         if (res && res.data) {

@@ -64,7 +64,7 @@
   <script src="js/api.js"></script>
   <script src="js/navbar.js"></script>
   <script>
-    requireRole('Admin', 'Super Admin');
+    const user = requireRole('Admin', 'Super Admin');
 
     let customers = [];
 
@@ -73,6 +73,7 @@
     const statusFilter = document.getElementById('customer-status-filter');
 
     async function loadCustomers() {
+      if (!user) return;
       try {
         const queryParams = new URLSearchParams();
         if (statusFilter.value !== 'ALL') queryParams.append('status', statusFilter.value);
@@ -154,13 +155,15 @@
       return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
-    let searchDebounce;
-    searchInput.addEventListener('input', () => {
-      clearTimeout(searchDebounce);
-      searchDebounce = setTimeout(loadCustomers, 300);
-    });
-    statusFilter.addEventListener('change', loadCustomers);
-    loadCustomers();
+    if (user) {
+      let searchDebounce;
+      searchInput.addEventListener('input', () => {
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(loadCustomers, 300);
+      });
+      statusFilter.addEventListener('change', loadCustomers);
+      loadCustomers();
+    }
   </script>
 </body>
 </html>

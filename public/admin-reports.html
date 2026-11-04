@@ -115,9 +115,10 @@
   <script src="js/api.js"></script>
   <script src="js/navbar.js"></script>
   <script>
-    requireRole('Admin', 'Super Admin');
+    const user = requireRole('Admin', 'Super Admin');
 
     async function loadReports() {
+      if (!user) return;
       try {
         const res = await apiFetch('/admin/reports');
         if (res && res.data) {
@@ -181,12 +182,14 @@
       }, 1000);
     };
 
-    document.getElementById('report-period').addEventListener('change', (e) => {
-      showToast(`Refreshed analytics for period: ${e.target.options[e.target.selectedIndex].text}`, 'info');
-      loadReports();
-    });
+    if (user) {
+      document.getElementById('report-period').addEventListener('change', (e) => {
+        showToast(`Refreshed analytics for period: ${e.target.options[e.target.selectedIndex].text}`, 'info');
+        loadReports();
+      });
 
-    loadReports();
+      loadReports();
+    }
   </script>
 </body>
 </html>

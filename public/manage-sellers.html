@@ -66,7 +66,7 @@
   <script src="js/api.js"></script>
   <script src="js/navbar.js"></script>
   <script>
-    requireRole('Admin', 'Super Admin');
+    const user = requireRole('Admin', 'Super Admin');
 
     let sellers = [];
 
@@ -75,6 +75,7 @@
     const searchInput = document.getElementById('seller-search-input');
 
     async function loadSellers() {
+      if (!user) return;
       try {
         const queryParams = new URLSearchParams();
         if (currentTab !== 'ALL') queryParams.append('status', currentTab);
@@ -164,25 +165,23 @@
       }
     };
 
-    document.querySelectorAll('.admin-tab').forEach(tab => {
-      tab.addEventListener('click', (e) => {
-        document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        currentTab = tab.dataset.tab;
-        loadSellers();
+    if (user) {
+      document.querySelectorAll('.admin-tab').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+          document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          currentTab = tab.dataset.tab;
+          loadSellers();
+        });
       });
-    });
 
-    function escapeHtml(str) {
-      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      let searchDebounce;
+      searchInput.addEventListener('input', () => {
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(loadSellers, 300);
+      });
+      loadSellers();
     }
-
-    let searchDebounce;
-    searchInput.addEventListener('input', () => {
-      clearTimeout(searchDebounce);
-      searchDebounce = setTimeout(loadSellers, 300);
-    });
-    loadSellers();
   </script>
 </body>
 </html>

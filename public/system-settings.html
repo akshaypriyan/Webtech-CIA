@@ -107,9 +107,10 @@
   <script src="js/api.js"></script>
   <script src="js/navbar.js"></script>
   <script>
-    requireRole('Super Admin');
+    const user = requireRole('Super Admin');
 
     async function loadSettings() {
+      if (!user) return;
       try {
         const res = await apiFetch('/superadmin/settings');
         if (res && res.data) {
@@ -163,7 +164,9 @@
       }, 1200);
     };
 
-    loadSettings();
+    if (user) {
+      loadSettings();
+    }
   </script>
 </body>
 </html>

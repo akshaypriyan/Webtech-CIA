@@ -80,7 +80,7 @@
   <script src="js/api.js"></script>
   <script src="js/navbar.js"></script>
   <script>
-    requireRole('Super Admin');
+    const user = requireRole('Super Admin');
 
     let logs = [];
 
@@ -90,6 +90,7 @@
     const roleFilter = document.getElementById('log-role-filter');
 
     async function loadLogs() {
+      if (!user) return;
       try {
         const queryParams = new URLSearchParams();
         if (actionFilter.value !== 'ALL') queryParams.append('action', actionFilter.value);
@@ -152,24 +153,22 @@
       }).join('');
     }
 
-    document.getElementById('refresh-logs-btn').addEventListener('click', () => {
-      showToast('Refreshing latest system logs...', 'info', 1000);
+    if (user) {
+      document.getElementById('refresh-logs-btn').addEventListener('click', () => {
+        showToast('Refreshing latest system logs...', 'info', 1000);
+        loadLogs();
+      });
+
+      let searchDebounce;
+      searchInput.addEventListener('input', () => {
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(loadLogs, 300);
+      });
+      actionFilter.addEventListener('change', loadLogs);
+      roleFilter.addEventListener('change', loadLogs);
+
       loadLogs();
-    });
-
-    function escapeHtml(str) {
-      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
-
-    let searchDebounce;
-    searchInput.addEventListener('input', () => {
-      clearTimeout(searchDebounce);
-      searchDebounce = setTimeout(loadLogs, 300);
-    });
-    actionFilter.addEventListener('change', loadLogs);
-    roleFilter.addEventListener('change', loadLogs);
-
-    loadLogs();
   </script>
 </body>
 </html>

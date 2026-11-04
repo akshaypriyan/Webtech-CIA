@@ -122,7 +122,7 @@ async function placeOrder(req, res, next) {
     // 6. Insert Master Order record into `orders`
     const [orderResult] = await connection.query(
       `INSERT INTO orders (customer_id, total_amount, shipping_address, order_status, payment_status)
-       VALUES (?, ?, ?, 'Pending', 'Paid')`,
+       VALUES (?, ?, ?, 'Processing', 'Paid')`,
       [customerId, totalAmount, shipping_address.trim()]
     );
     const orderId = orderResult.insertId;
@@ -133,7 +133,7 @@ async function placeOrder(req, res, next) {
 
       await connection.query(
         `INSERT INTO order_items (order_id, product_id, seller_id, quantity, price, subtotal, item_status)
-         VALUES (?, ?, ?, ?, ?, ?, 'Pending')`,
+         VALUES (?, ?, ?, ?, ?, ?, 'Processing')`,
         [orderId, item.product_id, item.seller_id, item.quantity, item.price, itemSubtotal]
       );
 
